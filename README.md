@@ -51,32 +51,29 @@ php artisan install:broadcasting
 npm install
 npm install chess.js alpinejs
 
-# 5. Copier les fichiers du projet FanChess
-# (Copier tous les fichiers de ce package dans le projet Laravel)
-
-# 6. Configurer le .env
+# 5. Configurer le .env
 cp .env.example .env
 php artisan key:generate
 
-# 7. Configurer la base de données dans .env
+# 6. Configurer la base de données dans .env
 # DB_DATABASE=fanchess
 # DB_USERNAME=root
 # DB_PASSWORD=
 
-# 8. Lancer les migrations et seeders
+# 7. Lancer les migrations et seeders
 php artisan migrate
 php artisan db:seed
 
-# 9. Créer le lien symbolique pour le storage
+# 8. Créer le lien symbolique pour le storage
 php artisan storage:link
 
-# 10. Compiler les assets
+# 9. Compiler les assets
 npm run build
 
-# 11. Lancer le serveur
+# 10. Lancer le serveur
 php artisan serve
 
-# 12. Dans un autre terminal, lancer Reverb
+# 11. Dans un autre terminal, lancer Reverb
 php artisan reverb:start
 ```
 
