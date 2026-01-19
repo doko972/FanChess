@@ -2,15 +2,31 @@
     @push('styles')
     <style>
         /* Échiquier */
+        .chess-board-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .chess-board-container.fullscreen-board {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 10, 26, 0.98);
+            z-index: 1000;
+            padding: 20px;
+        }
+
         .chess-board {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
-            aspect-ratio: 1;
             border-radius: 12px;
-            overflow: hidden;
+            /* overflow: hidden; */
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            max-width: 560px;
-            margin: 0 auto;
+            transition: width 0.3s ease, height 0.3s ease;
         }
 
         .chess-square {
@@ -21,8 +37,8 @@
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s;
-            height: 70px;
-            width: 70px;
+            height: 100%;
+            width: 100%;
         }
 
         .chess-square.light {
@@ -169,7 +185,7 @@
     </style>
     @endpush
 
-    <div class="max-w-7xl mx-auto px-4 py-6" x-data="chessGame()" x-init="init()">
+    <div class="mx-auto px-4 py-6" x-data="chessGame()" x-init="init()">
         <!-- Header de la partie -->
         <div class="flex justify-between items-center mb-6">
             <div class="flex items-center space-x-4">
@@ -179,7 +195,26 @@
                 <div class="h-6 w-px bg-white/20"></div>
                 <span class="font-gaming text-lg">{{ $game->theme?->name ?? 'Partie Classique' }}</span>
             </div>
-            <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-4">
+                <!-- Contrôles de zoom -->
+                <div class="flex items-center space-x-2 bg-white/5 rounded-lg px-3 py-1">
+                    <button @click="zoomOut()" class="text-gray-400 hover:text-white transition text-lg px-1" title="Réduire">
+                        −
+                    </button>
+                    <span class="text-sm text-gray-300 w-12 text-center" x-text="zoomLevel + '%'"></span>
+                    <button @click="zoomIn()" class="text-gray-400 hover:text-white transition text-lg px-1" title="Agrandir">
+                        +
+                    </button>
+                    <button @click="resetZoom()" class="text-gray-400 hover:text-white transition text-xs ml-1" title="Réinitialiser">
+                        ↺
+                    </button>
+                </div>
+                <!-- Plein écran -->
+                <button @click="toggleFullscreen()" class="p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition" title="Plein écran">
+                    <span x-show="!isFullscreen">⛶</span>
+                    <span x-show="isFullscreen">⛷</span>
+                </button>
+                
                 @if($game->isInProgress())
                     <button @click="offerDraw()" class="px-4 py-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition text-sm">
                         ½ Nulle
@@ -285,8 +320,22 @@
             </div>
 
             <!-- Échiquier -->
-            <div class="lg:col-span-2">
-                <div class="chess-board">
+            <div class="lg:col-span-2 flex flex-col items-center">
+                <div class="chess-board-container" :class="{ 'fullscreen-board': isFullscreen }">
+                    <!-- Bouton fermer en plein écran -->
+                    <button x-show="isFullscreen" 
+                            @click="toggleFullscreen()" 
+                            class="absolute top-4 right-4 z-50 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-2xl"
+                            title="Quitter le plein écran (Echap)">
+                        ✕
+                    </button>
+                    <!-- Contrôles zoom en plein écran -->
+                    <div x-show="isFullscreen" class="absolute top-4 left-4 z-50 flex items-center space-x-2 bg-black/50 rounded-lg px-3 py-2">
+                        <button @click="zoomOut()" class="text-gray-300 hover:text-white transition text-xl px-2">−</button>
+                        <span class="text-sm text-gray-300 w-12 text-center" x-text="zoomLevel + '%'"></span>
+                        <button @click="zoomIn()" class="text-gray-300 hover:text-white transition text-xl px-2">+</button>
+                    </div>
+                    <div class="chess-board" :style="'width: ' + boardSize + 'px; height: ' + boardSize + 'px;'">
                     <template x-for="(row, rowIndex) in displayBoard" :key="rowIndex">
                         <template x-for="(square, colIndex) in row" :key="rowIndex + '-' + colIndex">
                             <div class="chess-square"
@@ -321,6 +370,7 @@
                             </div>
                         </template>
                     </template>
+                    </div>
                 </div>
 
                 <!-- Statut de la partie -->
@@ -419,6 +469,15 @@
                 capturedByMe: [],
                 capturedByOpponent: [],
 
+                // Zoom
+                zoomLevel: 100,
+                baseSize: 560,
+                isFullscreen: false,
+
+                get boardSize() {
+                    return Math.round(this.baseSize * this.zoomLevel / 100);
+                },
+
                 init() {
                     console.log('Init FanChess - Player:', this.playerColor);
                     
@@ -431,6 +490,15 @@
                     if (this.isAiGame && this.playerColor === 'black' && this.currentTurn === 'white') {
                         setTimeout(() => this.makeAiMove(), 1000);
                     }
+
+                    // Touche Escape pour quitter le plein écran
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape' && this.isFullscreen) {
+                            this.isFullscreen = false;
+                            this.baseSize = 560;
+                            this.zoomLevel = 100;
+                        }
+                    });
                 },
 
                 updateBoard() {
@@ -757,6 +825,36 @@
 
                 offerDraw() {
                     alert('Fonctionnalité à implémenter avec WebSocket');
+                },
+
+                // Fonctions de zoom
+                zoomIn() {
+                    if (this.zoomLevel < 200) {
+                        this.zoomLevel += 10;
+                    }
+                },
+
+                zoomOut() {
+                    if (this.zoomLevel > 50) {
+                        this.zoomLevel -= 10;
+                    }
+                },
+
+                resetZoom() {
+                    this.zoomLevel = 100;
+                },
+
+                toggleFullscreen() {
+                    this.isFullscreen = !this.isFullscreen;
+                    if (this.isFullscreen) {
+                        // En plein écran, adapter la taille à l'écran
+                        const screenMin = Math.min(window.innerWidth, window.innerHeight) - 100;
+                        this.baseSize = Math.min(screenMin, 800);
+                        this.zoomLevel = 100;
+                    } else {
+                        this.baseSize = 560;
+                        this.zoomLevel = 100;
+                    }
                 }
             };
         }
