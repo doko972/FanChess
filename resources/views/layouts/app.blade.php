@@ -136,6 +136,49 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--secondary);
         }
+
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            html {
+                -webkit-text-size-adjust: 100%;
+            }
+
+            body {
+                overflow-x: hidden;
+            }
+
+            /* Prevent horizontal scroll */
+            .max-w-7xl {
+                max-width: 100%;
+            }
+
+            /* Better touch targets (exclude checkboxes and radios) */
+            button, a, select,
+            input:not([type="checkbox"]):not([type="radio"]) {
+                min-height: 44px;
+            }
+
+            /* Fix input zoom on iOS */
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+        }
+
+        /* Smooth scroll behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Better focus styles for accessibility */
+        *:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* Alpine.js cloak to prevent FOUC */
+        [x-cloak] {
+            display: none !important;
+        }
     </style>
 
     @stack('styles')
@@ -146,22 +189,22 @@
 
     <div class="relative z-10 min-h-full flex flex-col">
         <!-- Navigation -->
-        <nav class="bg-black/30 backdrop-blur-md border-b border-white/10 sticky top-0 z-50">
+        <nav class="bg-black/30 backdrop-blur-md border-b border-white/10 sticky top-0 z-50" x-data="{ mobileMenuOpen: false }">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <!-- Logo -->
                     <div class="flex items-center">
-                        <a href="{{ route('home') }}" class="flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center glow">
-                                <span class="text-2xl">♔</span>
+                        <a href="{{ route('home') }}" class="flex items-center space-x-2 sm:space-x-3">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center glow">
+                                <span class="text-xl sm:text-2xl">♔</span>
                             </div>
-                            <span class="font-gaming font-bold text-xl bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                            <span class="font-gaming font-bold text-lg sm:text-xl bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
                                 FanChess
                             </span>
                         </a>
                     </div>
 
-                    <!-- Navigation Links -->
+                    <!-- Navigation Links (Desktop) -->
                     @auth
                     <div class="hidden md:flex items-center space-x-8">
                         <a href="{{ route('lobby') }}" class="nav-link text-gray-300 hover:text-white {{ request()->routeIs('lobby') ? 'active text-white' : '' }}">
@@ -178,20 +221,20 @@
                     </div>
                     @endauth
 
-                    <!-- User Menu -->
-                    <div class="flex items-center space-x-4">
+                    <!-- User Menu + Mobile hamburger -->
+                    <div class="flex items-center space-x-2 sm:space-x-4">
                         @auth
-                            <div class="flex items-center space-x-3">
+                            <div class="flex items-center space-x-2 sm:space-x-3">
                                 <div class="text-right hidden sm:block">
                                     <div class="text-sm font-medium text-white">{{ auth()->user()->name }}</div>
                                     <div class="text-xs text-gray-400">ELO: {{ auth()->user()->elo_rating }}</div>
                                 </div>
                                 <div class="relative" x-data="{ open: false }">
-                                    <button @click="open = !open" class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-sm hover:ring-2 ring-white/30 transition">
+                                    <button @click="open = !open" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-sm hover:ring-2 ring-white/30 transition">
                                         {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                                     </button>
                                     <div x-show="open" @click.away="open = false" x-transition
-                                         class="absolute right-0 mt-2 w-48 bg-gray-900 border border-white/10 rounded-xl shadow-xl overflow-hidden">
+                                         class="absolute right-0 mt-2 w-48 bg-gray-900 border border-white/10 rounded-xl shadow-xl overflow-hidden z-50">
                                         <a href="{{ route('profile.edit') }}" class="block px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition">
                                             Mon Profil
                                         </a>
@@ -204,15 +247,41 @@
                                     </div>
                                 </div>
                             </div>
+                            <!-- Hamburger button (mobile) -->
+                            <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path x-show="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                                    <path x-show="mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
                         @else
-                            <a href="{{ route('login') }}" class="text-gray-300 hover:text-white transition">Connexion</a>
-                            <a href="{{ route('register') }}" class="btn-primary px-4 py-2 rounded-lg font-medium">
+                            <a href="{{ route('login') }}" class="text-gray-300 hover:text-white transition text-sm sm:text-base">Connexion</a>
+                            <a href="{{ route('register') }}" class="btn-primary px-3 sm:px-4 py-2 rounded-lg font-medium text-sm sm:text-base">
                                 Rejoindre
                             </a>
                         @endauth
                     </div>
                 </div>
             </div>
+
+            <!-- Mobile menu -->
+            @auth
+            <div x-show="mobileMenuOpen" x-collapse class="md:hidden border-t border-white/10">
+                <div class="px-4 py-3 space-y-2">
+                    <a href="{{ route('lobby') }}" class="block px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition {{ request()->routeIs('lobby') ? 'bg-white/10 text-white' : '' }}">
+                        🎮 Lobby
+                    </a>
+                    <a href="{{ route('game.history') }}" class="block px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition {{ request()->routeIs('game.history') ? 'bg-white/10 text-white' : '' }}">
+                        📜 Mes Parties
+                    </a>
+                    @if(auth()->user()->is_admin)
+                    <a href="{{ route('admin.dashboard') }}" class="block px-3 py-2 rounded-lg text-amber-400 hover:text-amber-300 hover:bg-white/10 transition {{ request()->routeIs('admin.*') ? 'bg-white/10' : '' }}">
+                        ⚙️ Admin
+                    </a>
+                    @endif
+                </div>
+            </div>
+            @endauth
         </nav>
 
         <!-- Flash Messages -->

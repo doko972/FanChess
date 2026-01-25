@@ -17,6 +17,8 @@ class Game extends Model
         'white_player_id',
         'black_player_id',
         'theme_id',
+        'white_theme_id',
+        'black_theme_id',
         'winner_id',
         'status',
         'game_type',
@@ -109,11 +111,27 @@ class Game extends Model
     }
 
     /**
-     * Thème utilisé
+     * Thème utilisé (legacy - pour compatibilité)
      */
     public function theme(): BelongsTo
     {
         return $this->belongsTo(Theme::class);
+    }
+
+    /**
+     * Thème des pièces blanches
+     */
+    public function whiteTheme(): BelongsTo
+    {
+        return $this->belongsTo(Theme::class, 'white_theme_id');
+    }
+
+    /**
+     * Thème des pièces noires
+     */
+    public function blackTheme(): BelongsTo
+    {
+        return $this->belongsTo(Theme::class, 'black_theme_id');
     }
 
     /**

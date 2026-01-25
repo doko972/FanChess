@@ -19,7 +19,9 @@ class GameController extends Controller
         $game = Game::with([
             'whitePlayer',
             'blackPlayer',
-            'theme.cards',
+            'whiteTheme.cards',
+            'blackTheme.cards',
+            'theme.cards', // Legacy fallback
             'moves'
         ])->where('uuid', $uuid)->firstOrFail();
 
@@ -31,11 +33,22 @@ class GameController extends Controller
             abort(403, 'Vous ne participez pas à cette partie.');
         }
 
-        // Organiser les cartes par type et couleur
+        // Organiser les cartes par type et couleur (thèmes séparés)
         $cards = [];
-        if ($game->theme) {
-            foreach ($game->theme->cards as $card) {
-                $cards[$card->color][$card->piece_type] = $card;
+
+        // Cartes blanches depuis whiteTheme
+        $whiteTheme = $game->whiteTheme ?? $game->theme;
+        if ($whiteTheme) {
+            foreach ($whiteTheme->cards->where('color', 'white') as $card) {
+                $cards['white'][$card->piece_type] = $card;
+            }
+        }
+
+        // Cartes noires depuis blackTheme
+        $blackTheme = $game->blackTheme ?? $game->theme;
+        if ($blackTheme) {
+            foreach ($blackTheme->cards->where('color', 'black') as $card) {
+                $cards['black'][$card->piece_type] = $card;
             }
         }
 
@@ -230,7 +243,9 @@ class GameController extends Controller
         $game = Game::with([
             'whitePlayer',
             'blackPlayer',
-            'theme.cards',
+            'whiteTheme.cards',
+            'blackTheme.cards',
+            'theme.cards', // Legacy fallback
             'moves'
         ])->where('uuid', $uuid)->firstOrFail();
 
@@ -238,10 +253,22 @@ class GameController extends Controller
             return redirect()->route('game.play', $game->uuid);
         }
 
+        // Organiser les cartes par type et couleur (thèmes séparés)
         $cards = [];
-        if ($game->theme) {
-            foreach ($game->theme->cards as $card) {
-                $cards[$card->color][$card->piece_type] = $card;
+
+        // Cartes blanches depuis whiteTheme
+        $whiteTheme = $game->whiteTheme ?? $game->theme;
+        if ($whiteTheme) {
+            foreach ($whiteTheme->cards->where('color', 'white') as $card) {
+                $cards['white'][$card->piece_type] = $card;
+            }
+        }
+
+        // Cartes noires depuis blackTheme
+        $blackTheme = $game->blackTheme ?? $game->theme;
+        if ($blackTheme) {
+            foreach ($blackTheme->cards->where('color', 'black') as $card) {
+                $cards['black'][$card->piece_type] = $card;
             }
         }
 

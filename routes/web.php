@@ -96,6 +96,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/lobby/creer-partie', [LobbyController::class, 'createGame'])->name('lobby.create');
     Route::post('/lobby/creer-partie-ia', [LobbyController::class, 'createAiGame'])->name('lobby.create-ai');
     Route::get('/lobby/attente/{uuid}', [LobbyController::class, 'waiting'])->name('game.waiting');
+    Route::get('/lobby/rejoindre/{uuid}', [LobbyController::class, 'showJoinGame'])->name('lobby.join.show');
     Route::post('/lobby/rejoindre/{uuid}', [LobbyController::class, 'joinGame'])->name('lobby.join');
     Route::delete('/lobby/annuler/{uuid}', [LobbyController::class, 'cancelGame'])->name('lobby.cancel');
 

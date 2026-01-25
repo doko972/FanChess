@@ -7,6 +7,7 @@
             justify-content: center;
             align-items: center;
             transition: all 0.3s ease;
+            width: 100%;
         }
 
         .chess-board-container.fullscreen-board {
@@ -24,9 +25,10 @@
             display: grid;
             grid-template-columns: repeat(8, 1fr);
             border-radius: 12px;
-            /* overflow: hidden; */
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             transition: width 0.3s ease, height 0.3s ease;
+            max-width: 100%;
+            touch-action: manipulation;
         }
 
         .chess-square {
@@ -39,6 +41,7 @@
             transition: all 0.2s;
             height: 100%;
             width: 100%;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .chess-square.light {
@@ -49,8 +52,10 @@
             background: linear-gradient(135deg, #8b7355 0%, #6d5a45 100%);
         }
 
-        .chess-square:hover {
-            filter: brightness(1.1);
+        @media (hover: hover) {
+            .chess-square:hover {
+                filter: brightness(1.1);
+            }
         }
 
         .chess-square.selected {
@@ -94,7 +99,8 @@
             transition: transform 0.15s;
             user-select: none;
             z-index: 10;
-            color: #1a1a1a; /* Texte foncé pour les cartes blanches */
+            color: #1a1a1a;
+            touch-action: manipulation;
         }
 
         .chess-piece.black-piece {
@@ -102,9 +108,11 @@
             color: #f0f0f0;
         }
 
-        .chess-piece:hover {
-            transform: scale(1.08);
-            z-index: 20;
+        @media (hover: hover) {
+            .chess-piece:hover {
+                transform: scale(1.08);
+                z-index: 20;
+            }
         }
 
         .chess-piece.dragging {
@@ -117,10 +125,20 @@
             line-height: 1;
         }
 
+        /* Responsive piece icon */
+        @media (max-width: 480px) {
+            .piece-icon {
+                font-size: 1.2rem;
+            }
+            .piece-name {
+                display: none;
+            }
+        }
+
         .card-image {
-            width: 80%;
-            height: 65%;
-            object-fit: cover;
+            width: 90%;
+            height: 75%;
+            object-fit: contain;
             border-radius: 4px;
         }
 
@@ -182,57 +200,144 @@
         .move-white, .move-black {
             width: 4rem;
         }
+
+        /* Mobile game layout */
+        @media (max-width: 1024px) {
+            .game-sidebar {
+                order: 2;
+            }
+            .game-board-area {
+                order: 1;
+            }
+        }
+
+        /* Mobile header */
+        .mobile-game-header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        @media (max-width: 640px) {
+            .mobile-game-header {
+                flex-direction: column;
+            }
+            .mobile-game-header > div {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        /* Bottom panel mobile pour les infos de jeu */
+        .mobile-bottom-panel {
+            display: none;
+        }
+
+        @media (max-width: 1024px) {
+            .mobile-bottom-panel {
+                display: block;
+            }
+            .desktop-sidebar {
+                display: none;
+            }
+        }
+
+        @media (min-width: 1025px) {
+            .desktop-sidebar {
+                display: block;
+            }
+        }
     </style>
     @endpush
 
-    <div class="mx-auto px-4 py-6" x-data="chessGame()" x-init="init()">
+    <div class="mx-auto px-2 sm:px-4 py-4 sm:py-6" x-data="chessGame()" x-init="init()">
         <!-- Header de la partie -->
-        <div class="flex justify-between items-center mb-6">
-            <div class="flex items-center space-x-4">
-                <a href="{{ route('lobby') }}" class="text-gray-400 hover:text-white transition">
-                    ← Retour
-                </a>
-                <div class="h-6 w-px bg-white/20"></div>
-                <span class="font-gaming text-lg">{{ $game->theme?->name ?? 'Partie Classique' }}</span>
-            </div>
-            <div class="flex items-center space-x-4">
-                <!-- Contrôles de zoom -->
-                <div class="flex items-center space-x-2 bg-white/5 rounded-lg px-3 py-1">
-                    <button @click="zoomOut()" class="text-gray-400 hover:text-white transition text-lg px-1" title="Réduire">
-                        −
-                    </button>
-                    <span class="text-sm text-gray-300 w-12 text-center" x-text="zoomLevel + '%'"></span>
-                    <button @click="zoomIn()" class="text-gray-400 hover:text-white transition text-lg px-1" title="Agrandir">
-                        +
-                    </button>
-                    <button @click="resetZoom()" class="text-gray-400 hover:text-white transition text-xs ml-1" title="Réinitialiser">
-                        ↺
+        <div class="mobile-game-header mb-4 sm:mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <a href="{{ route('lobby') }}" class="text-gray-400 hover:text-white transition text-sm sm:text-base">
+                        ← <span class="hidden sm:inline">Retour</span>
+                    </a>
+                    <div class="h-6 w-px bg-white/20 hidden sm:block"></div>
+                    <span class="font-gaming text-sm sm:text-lg truncate max-w-[150px] sm:max-w-none">{{ $game->theme?->name ?? 'Partie Classique' }}</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <!-- Contrôles de zoom (masqués sur très petit écran) -->
+                    <div class="hidden sm:flex items-center space-x-2 bg-white/5 rounded-lg px-3 py-1">
+                        <button @click="zoomOut()" class="text-gray-400 hover:text-white transition text-lg px-1" title="Réduire">
+                            −
+                        </button>
+                        <span class="text-sm text-gray-300 w-12 text-center" x-text="zoomLevel + '%'"></span>
+                        <button @click="zoomIn()" class="text-gray-400 hover:text-white transition text-lg px-1" title="Agrandir">
+                            +
+                        </button>
+                        <button @click="resetZoom()" class="text-gray-400 hover:text-white transition text-xs ml-1" title="Réinitialiser">
+                            ↺
+                        </button>
+                    </div>
+                    <!-- Plein écran -->
+                    <button @click="toggleFullscreen()" class="p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition" title="Plein écran">
+                        <span x-show="!isFullscreen">⛶</span>
+                        <span x-show="isFullscreen">⛷</span>
                     </button>
                 </div>
-                <!-- Plein écran -->
-                <button @click="toggleFullscreen()" class="p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition" title="Plein écran">
-                    <span x-show="!isFullscreen">⛶</span>
-                    <span x-show="isFullscreen">⛷</span>
+            </div>
+
+            @if($game->isInProgress())
+            <div class="flex items-center justify-end space-x-2 mt-2 sm:mt-0">
+                <button @click="offerDraw()" class="px-3 sm:px-4 py-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition text-xs sm:text-sm">
+                    ½ Nulle
                 </button>
-                
-                @if($game->isInProgress())
-                    <button @click="offerDraw()" class="px-4 py-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition text-sm">
-                        ½ Nulle
+                <form action="{{ route('game.resign', $game->uuid) }}" method="POST"
+                      onsubmit="return confirm('Voulez-vous vraiment abandonner ?')">
+                    @csrf
+                    <button type="submit" class="px-3 sm:px-4 py-2 bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/30 transition text-xs sm:text-sm">
+                        Abandonner
                     </button>
-                    <form action="{{ route('game.resign', $game->uuid) }}" method="POST" 
-                          onsubmit="return confirm('Voulez-vous vraiment abandonner ?')">
-                        @csrf
-                        <button type="submit" class="px-4 py-2 bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/30 transition text-sm">
-                            Abandonner
-                        </button>
-                    </form>
-                @endif
+                </form>
+            </div>
+            @endif
+        </div>
+
+        <!-- Infos joueurs compactes pour mobile -->
+        <div class="lg:hidden flex justify-between items-center mb-4 gap-2">
+            <!-- Adversaire compact -->
+            <div class="card-glass rounded-xl px-3 py-2 flex items-center space-x-2 flex-1">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center font-bold text-sm">
+                    @if($game->isAiGame())
+                        🤖
+                    @else
+                        {{ $playerColor === 'white' ? strtoupper(substr($game->blackPlayer?->name ?? '?', 0, 1)) : strtoupper(substr($game->whitePlayer->name, 0, 1)) }}
+                    @endif
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium text-sm truncate">
+                        @if($game->isAiGame())
+                            IA (Niv. {{ $game->ai_level }})
+                        @else
+                            {{ $playerColor === 'white' ? ($game->blackPlayer?->name ?? 'En attente...') : $game->whitePlayer->name }}
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- VS -->
+            <div class="text-gray-500 text-sm font-gaming">VS</div>
+
+            <!-- Joueur compact -->
+            <div class="card-glass rounded-xl px-3 py-2 flex items-center space-x-2 flex-1 border border-indigo-500/30">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-sm">
+                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium text-sm truncate">{{ auth()->user()->name }}</div>
+                </div>
             </div>
         </div>
 
-        <div class="grid lg:grid-cols-4 gap-6">
-            <!-- Colonne gauche : Info adversaire + historique -->
-            <div class="lg:col-span-1 space-y-4">
+        <div class="grid lg:grid-cols-4 gap-4 lg:gap-6">
+            <!-- Colonne gauche : Info adversaire + historique (desktop only) -->
+            <div class="hidden lg:block lg:col-span-1 space-y-4 desktop-sidebar">
                 <!-- Adversaire -->
                 <div class="card-glass rounded-xl p-4">
                     <div class="flex items-center space-x-3">
@@ -320,7 +425,7 @@
             </div>
 
             <!-- Échiquier -->
-            <div class="lg:col-span-2 flex flex-col items-center">
+            <div class="lg:col-span-2 flex flex-col items-center game-board-area">
                 <div class="chess-board-container" :class="{ 'fullscreen-board': isFullscreen }">
                     <!-- Bouton fermer en plein écran -->
                     <button x-show="isFullscreen" 
@@ -395,8 +500,8 @@
                 </div>
             </div>
 
-            <!-- Colonne droite : Info joueur -->
-            <div class="lg:col-span-1 space-y-4">
+            <!-- Colonne droite : Info joueur (desktop only) -->
+            <div class="hidden lg:block lg:col-span-1 space-y-4 desktop-sidebar">
                 <!-- Joueur -->
                 <div class="card-glass rounded-xl p-4 border border-indigo-500/30">
                     <div class="flex items-center space-x-3">
@@ -436,10 +541,62 @@
                 </div>
             </div>
         </div>
+
+        <!-- Panel mobile pour les infos supplémentaires -->
+        <div class="lg:hidden mt-4 space-y-3" x-data="{ showHistory: false, showCaptures: false }">
+            <!-- Pièces capturées (compact) -->
+            <div class="card-glass rounded-xl p-3">
+                <button @click="showCaptures = !showCaptures" class="w-full flex items-center justify-between">
+                    <h3 class="font-gaming text-sm">Pièces capturées</h3>
+                    <span class="text-gray-400 text-xs" x-text="showCaptures ? '▲' : '▼'"></span>
+                </button>
+                <div x-show="showCaptures" x-collapse class="mt-3">
+                    <div class="flex justify-between gap-4">
+                        <div class="flex-1">
+                            <span class="text-xs text-gray-400">Vous :</span>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                <template x-for="(piece, idx) in capturedByMe" :key="'me-m-'+idx">
+                                    <span class="text-lg" x-text="getCapturedIcon(piece)"></span>
+                                </template>
+                                <span x-show="capturedByMe.length === 0" class="text-gray-600 text-sm">-</span>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <span class="text-xs text-gray-400">Adversaire :</span>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                <template x-for="(piece, idx) in capturedByOpponent" :key="'opp-m-'+idx">
+                                    <span class="text-lg" x-text="getCapturedIcon(piece)"></span>
+                                </template>
+                                <span x-show="capturedByOpponent.length === 0" class="text-gray-600 text-sm">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historique (accordéon) -->
+            <div class="card-glass rounded-xl p-3">
+                <button @click="showHistory = !showHistory" class="w-full flex items-center justify-between">
+                    <h3 class="font-gaming text-sm">Historique des coups</h3>
+                    <span class="text-gray-400 text-xs" x-text="showHistory ? '▲' : '▼'"></span>
+                </button>
+                <div x-show="showHistory" x-collapse class="mt-3 max-h-32 overflow-y-auto">
+                    <template x-for="(movePair, index) in movesHistory" :key="'m-'+index">
+                        <div class="move-item text-sm">
+                            <span class="move-number" x-text="(index + 1) + '.'"></span>
+                            <span class="move-white text-white" x-text="movePair[0] || ''"></span>
+                            <span class="move-black text-gray-400" x-text="movePair[1] || ''"></span>
+                        </div>
+                    </template>
+                    <div x-show="movesHistory.length === 0" class="text-gray-500 text-sm text-center py-2">
+                        Aucun coup joué
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     @push('scripts')
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     <script>
         function chessGame() {
             return {
@@ -473,13 +630,39 @@
                 zoomLevel: 100,
                 baseSize: 560,
                 isFullscreen: false,
+                isMobile: false,
 
                 get boardSize() {
                     return Math.round(this.baseSize * this.zoomLevel / 100);
                 },
 
+                calculateBaseSize() {
+                    const screenWidth = window.innerWidth;
+                    const screenHeight = window.innerHeight;
+
+                    if (this.isFullscreen) {
+                        const screenMin = Math.min(screenWidth, screenHeight) - 40;
+                        return Math.min(screenMin, 800);
+                    }
+
+                    // Mobile : utiliser la largeur disponible moins les marges
+                    if (screenWidth < 640) {
+                        return Math.min(screenWidth - 16, 400);
+                    }
+                    // Tablet
+                    if (screenWidth < 1024) {
+                        return Math.min(screenWidth - 32, 480);
+                    }
+                    // Desktop
+                    return 560;
+                },
+
                 init() {
                     console.log('Init FanChess - Player:', this.playerColor);
+
+                    // Calculer la taille initiale de l'échiquier
+                    this.isMobile = window.innerWidth < 1024;
+                    this.baseSize = this.calculateBaseSize();
 
                     this.chess = new Chess('{{ $game->current_fen }}');
                     this.updateBoard();
@@ -495,8 +678,16 @@
                     document.addEventListener('keydown', (e) => {
                         if (e.key === 'Escape' && this.isFullscreen) {
                             this.isFullscreen = false;
-                            this.baseSize = 560;
+                            this.baseSize = this.calculateBaseSize();
                             this.zoomLevel = 100;
+                        }
+                    });
+
+                    // Redimensionner l'échiquier quand la fenêtre change de taille
+                    window.addEventListener('resize', () => {
+                        this.isMobile = window.innerWidth < 1024;
+                        if (!this.isFullscreen) {
+                            this.baseSize = this.calculateBaseSize();
                         }
                     });
 
@@ -912,15 +1103,8 @@
 
                 toggleFullscreen() {
                     this.isFullscreen = !this.isFullscreen;
-                    if (this.isFullscreen) {
-                        // En plein écran, adapter la taille à l'écran
-                        const screenMin = Math.min(window.innerWidth, window.innerHeight) - 100;
-                        this.baseSize = Math.min(screenMin, 800);
-                        this.zoomLevel = 100;
-                    } else {
-                        this.baseSize = 560;
-                        this.zoomLevel = 100;
-                    }
+                    this.baseSize = this.calculateBaseSize();
+                    this.zoomLevel = 100;
                 }
             };
         }

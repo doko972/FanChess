@@ -18,7 +18,7 @@ class LobbyController extends Controller
         $user = auth()->user();
 
         // Parties en attente (créées par d'autres joueurs)
-        $waitingGames = Game::with(['whitePlayer', 'theme'])
+        $waitingGames = Game::with(['whitePlayer', 'whiteTheme'])
             ->waiting()
             ->pvp()
             ->where('white_player_id', '!=', $user->id)
@@ -26,7 +26,7 @@ class LobbyController extends Controller
             ->get();
 
         // Mes parties en cours
-        $myGames = Game::with(['whitePlayer', 'blackPlayer', 'theme'])
+        $myGames = Game::with(['whitePlayer', 'blackPlayer', 'whiteTheme', 'blackTheme'])
             ->inProgress()
             ->where(function ($query) use ($user) {
                 $query->where('white_player_id', $user->id)
@@ -36,7 +36,7 @@ class LobbyController extends Controller
             ->get();
 
         // Ma partie en attente (si existante)
-        $myWaitingGame = Game::with('theme')
+        $myWaitingGame = Game::with('whiteTheme')
             ->waiting()
             ->where('white_player_id', $user->id)
             ->first();
@@ -92,7 +92,8 @@ class LobbyController extends Controller
 
         $game = Game::create([
             'white_player_id' => $user->id,
-            'theme_id' => $validated['theme_id'],
+            'theme_id' => $validated['theme_id'], // Legacy
+            'white_theme_id' => $validated['theme_id'], // Thème du créateur (blancs)
             'game_type' => 'pvp',
             'timer_enabled' => $request->boolean('timer_enabled'),
             'timer_minutes' => $validated['timer_minutes'] ?? null,
@@ -110,6 +111,7 @@ class LobbyController extends Controller
     {
         $validated = $request->validate([
             'theme_id' => 'required|exists:themes,id',
+            'ai_theme_id' => 'nullable|exists:themes,id',
             'ai_level' => 'required|integer|in:1,5,10,15,20',
             'player_color' => 'required|in:white,black,random',
             'timer_enabled' => 'boolean',
@@ -124,8 +126,11 @@ class LobbyController extends Controller
             $playerColor = rand(0, 1) ? 'white' : 'black';
         }
 
+        // Thème de l'IA (par défaut, le même que le joueur)
+        $aiThemeId = $validated['ai_theme_id'] ?? $validated['theme_id'];
+
         $gameData = [
-            'theme_id' => $validated['theme_id'],
+            'theme_id' => $validated['theme_id'], // Legacy
             'game_type' => 'ai',
             'ai_level' => $validated['ai_level'],
             'timer_enabled' => $request->boolean('timer_enabled'),
@@ -134,11 +139,15 @@ class LobbyController extends Controller
             'started_at' => now(),
         ];
 
+        // Assigner les thèmes selon la couleur choisie
         if ($playerColor === 'white') {
             $gameData['white_player_id'] = $user->id;
+            $gameData['white_theme_id'] = $validated['theme_id'];
+            $gameData['black_theme_id'] = $aiThemeId;
         } else {
             $gameData['black_player_id'] = $user->id;
-            // L'IA joue en premier si elle est blanche
+            $gameData['black_theme_id'] = $validated['theme_id'];
+            $gameData['white_theme_id'] = $aiThemeId;
         }
 
         $game = Game::create($gameData);
@@ -151,7 +160,7 @@ class LobbyController extends Controller
      */
     public function waiting(string $uuid)
     {
-        $game = Game::with(['whitePlayer', 'theme'])
+        $game = Game::with(['whitePlayer', 'whiteTheme'])
             ->where('uuid', $uuid)
             ->firstOrFail();
 
@@ -168,10 +177,42 @@ class LobbyController extends Controller
     }
 
     /**
-     * Rejoindre une partie
+     * Page de sélection du thème avant de rejoindre une partie
      */
-    public function joinGame(string $uuid)
+    public function showJoinGame(string $uuid)
     {
+        $game = Game::with(['whitePlayer', 'whiteTheme'])
+            ->where('uuid', $uuid)
+            ->firstOrFail();
+        $user = auth()->user();
+
+        if (!$game->isWaiting()) {
+            return redirect()->route('game.play', $game->uuid);
+        }
+
+        if ($game->white_player_id === $user->id) {
+            return redirect()->route('lobby')->with('error', 'Vous ne pouvez pas rejoindre votre propre partie.');
+        }
+
+        // Thèmes disponibles pour le joueur noir
+        $themes = Theme::active()
+            ->withCount('cards')
+            ->having('cards_count', '>=', 12)
+            ->orderBy('sort_order')
+            ->get();
+
+        return view('game.join', compact('game', 'themes'));
+    }
+
+    /**
+     * Rejoindre une partie avec le thème choisi
+     */
+    public function joinGame(Request $request, string $uuid)
+    {
+        $validated = $request->validate([
+            'theme_id' => 'required|exists:themes,id',
+        ]);
+
         $game = Game::where('uuid', $uuid)->firstOrFail();
         $user = auth()->user();
 
@@ -185,6 +226,7 @@ class LobbyController extends Controller
 
         $game->update([
             'black_player_id' => $user->id,
+            'black_theme_id' => $validated['theme_id'],
             'status' => 'in_progress',
             'started_at' => now(),
         ]);
