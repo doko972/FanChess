@@ -40,10 +40,10 @@
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         @forelse($cards as $card)
             <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden hover:border-indigo-500 transition group">
-                <div class="aspect-square relative">
+                <div class="aspect-square relative {{ $card->color === 'white' ? 'bg-gradient-to-br from-gray-100 to-gray-200' : 'bg-gradient-to-br from-gray-700 to-gray-800' }}">
                     @if($card->image)
-                        <img src="{{ Storage::url($card->image) }}" alt="{{ $card->name }}" 
-                             class="w-full h-full object-cover">
+                        <img src="{{ Storage::url($card->image) }}" alt="{{ $card->name }}"
+                             class="w-full h-full object-contain p-2">
                     @else
                         <div class="w-full h-full flex items-center justify-center {{ $card->color === 'white' ? 'bg-gray-200 text-gray-800' : 'bg-gray-700 text-gray-300' }}">
                             @php

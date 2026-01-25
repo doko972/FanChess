@@ -52,7 +52,39 @@ class GameController extends Controller
             }
         }
 
-        return view('game.play', compact('game', 'playerColor', 'cards'));
+        // Récupérer les sons du thème du joueur
+        $playerTheme = $playerColor === 'white' ? $whiteTheme : $blackTheme;
+        $themeSounds = null;
+        $themeStyles = null;
+
+        if ($playerTheme) {
+            $themeSounds = [
+                'music' => $playerTheme->music_file ? asset('storage/' . $playerTheme->music_file) : null,
+                'move' => $playerTheme->sound_move ? asset('storage/' . $playerTheme->sound_move) : null,
+                'capture' => $playerTheme->sound_capture ? asset('storage/' . $playerTheme->sound_capture) : null,
+                'check' => $playerTheme->sound_check ? asset('storage/' . $playerTheme->sound_check) : null,
+                'checkmate' => $playerTheme->sound_checkmate ? asset('storage/' . $playerTheme->sound_checkmate) : null,
+                'victory' => $playerTheme->sound_victory ? asset('storage/' . $playerTheme->sound_victory) : null,
+                'defeat' => $playerTheme->sound_defeat ? asset('storage/' . $playerTheme->sound_defeat) : null,
+            ];
+
+            $themeStyles = [
+                'primaryColor' => $playerTheme->primary_color,
+                'secondaryColor' => $playerTheme->secondary_color,
+                'accentColor' => $playerTheme->accent_color,
+                'backgroundImage' => $playerTheme->background_image ? asset('storage/' . $playerTheme->background_image) : null,
+            ];
+
+            // Générer les couleurs des cases à partir des couleurs du thème
+            if ($playerTheme->primary_color && $playerTheme->secondary_color) {
+                $themeStyles['squareDark1'] = $playerTheme->primary_color;
+                $themeStyles['squareDark2'] = $this->darkenColor($playerTheme->primary_color, 15);
+                $themeStyles['squareLight1'] = $this->lightenColor($playerTheme->secondary_color, 70);
+                $themeStyles['squareLight2'] = $this->lightenColor($playerTheme->secondary_color, 60);
+            }
+        }
+
+        return view('game.play', compact('game', 'playerColor', 'cards', 'themeSounds', 'themeStyles'));
     }
 
     /**
@@ -233,6 +265,48 @@ class GameController extends Controller
             ->paginate(20);
 
         return view('game.history', compact('games'));
+    }
+
+    /**
+     * Éclaircit une couleur hexadécimale
+     */
+    private function lightenColor(string $hex, int $percent): string
+    {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) == 3) {
+            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+        }
+
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+
+        $r = min(255, $r + (255 - $r) * $percent / 100);
+        $g = min(255, $g + (255 - $g) * $percent / 100);
+        $b = min(255, $b + (255 - $b) * $percent / 100);
+
+        return sprintf('#%02x%02x%02x', (int)$r, (int)$g, (int)$b);
+    }
+
+    /**
+     * Assombrit une couleur hexadécimale
+     */
+    private function darkenColor(string $hex, int $percent): string
+    {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) == 3) {
+            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+        }
+
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+
+        $r = max(0, $r * (100 - $percent) / 100);
+        $g = max(0, $g * (100 - $percent) / 100);
+        $b = max(0, $b * (100 - $percent) / 100);
+
+        return sprintf('#%02x%02x%02x', (int)$r, (int)$g, (int)$b);
     }
 
     /**

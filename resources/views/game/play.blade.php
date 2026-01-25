@@ -1,6 +1,62 @@
 <x-app-layout>
+    @php
+        $themeStyles = $themeStyles ?? [];
+    @endphp
+
     @push('styles')
     <style>
+        /* Variables CSS du thème */
+        :root {
+            --theme-primary: {{ $themeStyles['primaryColor'] ?? '#6366f1' }};
+            --theme-secondary: {{ $themeStyles['secondaryColor'] ?? '#8b5cf6' }};
+            --theme-accent: {{ $themeStyles['accentColor'] ?? '#f59e0b' }};
+        }
+
+        @if(!empty($themeStyles['squareDark1']))
+        /* Cases avec couleurs du thème */
+        .chess-square.light {
+            background: linear-gradient(135deg, {{ $themeStyles['squareLight1'] }} 0%, {{ $themeStyles['squareLight2'] }} 100%) !important;
+        }
+
+        .chess-square.dark {
+            background: linear-gradient(135deg, {{ $themeStyles['squareDark1'] }} 0%, {{ $themeStyles['squareDark2'] }} 100%) !important;
+        }
+        @endif
+
+        /* Background du thème */
+        @if(!empty($themeStyles['backgroundImage']))
+        .game-page-container {
+            position: relative;
+            min-height: 100vh;
+        }
+        .game-page-container::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('{{ $themeStyles['backgroundImage'] }}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: -2;
+            pointer-events: none;
+        }
+        /* Overlay sombre pour lisibilité */
+        .game-page-container::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(10, 10, 26, 0.7) 0%, rgba(30, 20, 50, 0.75) 100%);
+            z-index: -1;
+            pointer-events: none;
+        }
+        @endif
+
         /* Échiquier */
         .chess-board-container {
             display: flex;
@@ -45,11 +101,11 @@
         }
 
         .chess-square.light {
-            background: linear-gradient(135deg, #e8d5b7 0%, #d4c4a8 100%);
+            background: linear-gradient(135deg, var(--square-light-1, #e8d5b7) 0%, var(--square-light-2, #d4c4a8) 100%);
         }
 
         .chess-square.dark {
-            background: linear-gradient(135deg, #8b7355 0%, #6d5a45 100%);
+            background: linear-gradient(135deg, var(--square-dark-1, #8b7355) 0%, var(--square-dark-2, #6d5a45) 100%);
         }
 
         @media (hover: hover) {
@@ -59,7 +115,7 @@
         }
 
         .chess-square.selected {
-            box-shadow: inset 0 0 0 4px #f59e0b !important;
+            box-shadow: inset 0 0 0 4px var(--theme-accent) !important;
         }
 
         .chess-square.legal-move::after {
@@ -67,7 +123,8 @@
             position: absolute;
             width: 30%;
             height: 30%;
-            background: rgba(99, 102, 241, 0.6);
+            background: var(--theme-primary);
+            opacity: 0.6;
             border-radius: 50%;
             z-index: 5;
         }
@@ -77,7 +134,7 @@
         }
 
         .chess-square.last-move {
-            background: rgba(245, 158, 11, 0.4) !important;
+            /* La couleur est maintenant gérée via ::before avec var(--theme-accent) */
         }
 
         .chess-square.check {
@@ -180,6 +237,240 @@
             transition: width 0.5s ease;
         }
 
+        /* ========================================
+           ANIMATIONS DU JEU
+           ======================================== */
+
+        /* Animation de sélection de pièce */
+        @keyframes piece-select {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1.08); }
+        }
+
+        .chess-piece.selected-piece {
+            animation: piece-select 0.3s ease-out forwards;
+            box-shadow: 0 0 20px var(--theme-accent), 0 5px 15px rgba(0,0,0,0.4);
+            z-index: 30 !important;
+        }
+
+        /* Animation de déplacement fluide */
+        @keyframes piece-move {
+            0% { transform: scale(1.1); opacity: 0.8; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .chess-piece.just-moved {
+            animation: piece-move 0.4s ease-out;
+        }
+
+        /* Animation de capture / destruction */
+        @keyframes capture-explosion {
+            0% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+                filter: brightness(1);
+            }
+            20% {
+                transform: scale(1.3) rotate(5deg);
+                filter: brightness(2);
+            }
+            40% {
+                transform: scale(0.8) rotate(-10deg);
+                filter: brightness(1.5) hue-rotate(30deg);
+            }
+            100% {
+                transform: scale(0) rotate(180deg);
+                opacity: 0;
+                filter: brightness(3) blur(10px);
+            }
+        }
+
+        .chess-piece.captured {
+            animation: capture-explosion 0.5s ease-out forwards;
+            pointer-events: none;
+        }
+
+        /* Particules d'explosion */
+        @keyframes particle-fly {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
+        }
+
+        .capture-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 100;
+            animation: particle-fly 0.6s ease-out forwards;
+        }
+
+        /* Animation échec (roi en danger) */
+        @keyframes king-check {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8);
+            }
+            50% {
+                box-shadow: 0 0 30px 10px rgba(239, 68, 68, 0.6);
+            }
+        }
+
+        .chess-square.check {
+            animation: king-check 1s ease-in-out infinite;
+            background: rgba(239, 68, 68, 0.5) !important;
+        }
+
+        .chess-piece.in-check {
+            animation: king-check 1s ease-in-out infinite;
+            border: 2px solid #ef4444 !important;
+        }
+
+        /* Animation échec et mat */
+        @keyframes checkmate-shake {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            10% { transform: translateX(-5px) rotate(-2deg); }
+            20% { transform: translateX(5px) rotate(2deg); }
+            30% { transform: translateX(-5px) rotate(-2deg); }
+            40% { transform: translateX(5px) rotate(2deg); }
+            50% { transform: translateX(-3px) rotate(-1deg); }
+            60% { transform: translateX(3px) rotate(1deg); }
+            70% { transform: translateX(-2px) rotate(0deg); }
+            80% { transform: translateX(2px) rotate(0deg); }
+            90% { transform: translateX(-1px) rotate(0deg); }
+        }
+
+        .chess-piece.checkmated {
+            animation: checkmate-shake 0.8s ease-out;
+            filter: grayscale(50%) brightness(0.7);
+        }
+
+        /* Animation victoire */
+        @keyframes victory-glow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(34, 197, 94, 0.8);
+                transform: scale(1.05);
+            }
+        }
+
+        .chess-piece.victory {
+            animation: victory-glow 1s ease-in-out infinite;
+        }
+
+        /* Animation dernière case jouée */
+        .chess-square.last-move {
+            position: relative;
+        }
+
+        .chess-square.last-move::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--theme-accent);
+            opacity: 0.35;
+            animation: last-move-pulse 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes last-move-pulse {
+            0%, 100% { opacity: 0.25; }
+            50% { opacity: 0.45; }
+        }
+
+        /* Animation coups légaux */
+        @keyframes legal-dot-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 0.9; }
+        }
+
+        .chess-square.legal-move::after {
+            animation: legal-dot-pulse 1s ease-in-out infinite;
+        }
+
+        /* Animation capture possible */
+        @keyframes capture-ring-pulse {
+            0%, 100% {
+                box-shadow: inset 0 0 0 4px rgba(239, 68, 68, 0.6);
+            }
+            50% {
+                box-shadow: inset 0 0 0 6px rgba(239, 68, 68, 0.9);
+            }
+        }
+
+        .chess-square.legal-capture {
+            animation: capture-ring-pulse 1s ease-in-out infinite;
+        }
+
+        /* Animation indicateur de tour */
+        @keyframes turn-indicator {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+
+        .turn-indicator-active {
+            animation: turn-indicator 1.5s ease-in-out infinite;
+        }
+
+        /* Animation d'entrée du plateau */
+        @keyframes board-enter {
+            0% {
+                opacity: 0;
+                transform: scale(0.9) rotateX(10deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotateX(0deg);
+            }
+        }
+
+        .chess-board {
+            animation: board-enter 0.6s ease-out;
+        }
+
+        /* Overlay de fin de partie */
+        @keyframes overlay-appear {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .game-end-overlay {
+            animation: overlay-appear 0.5s ease-out;
+        }
+
+        /* Confetti pour victoire */
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            top: 0;
+            pointer-events: none;
+            z-index: 1000;
+            animation: confetti-fall 3s linear forwards;
+        }
+
         /* Historique des coups */
         .move-item {
             display: flex;
@@ -247,10 +538,53 @@
                 display: block;
             }
         }
+
+        /* Sliders de volume */
+        input[type="range"].volume-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: #374151;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        input[type="range"].volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        input[type="range"].volume-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+
+        input[type="range"].volume-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+
+        input[type="range"].volume-slider.music-slider {
+            background: linear-gradient(to right, #8b5cf6 0%, #8b5cf6 var(--val, 30%), #374151 var(--val, 30%), #374151 100%);
+        }
+
+        input[type="range"].volume-slider.sfx-slider {
+            background: linear-gradient(to right, #22c55e 0%, #22c55e var(--val, 70%), #374151 var(--val, 70%), #374151 100%);
+        }
     </style>
     @endpush
 
-    <div class="mx-auto px-2 sm:px-4 py-4 sm:py-6" x-data="chessGame()" x-init="init()">
+    <div class="game-page-container mx-auto px-2 sm:px-4 py-4 sm:py-6" x-data="chessGame()" x-init="init()">
         <!-- Header de la partie -->
         <div class="mobile-game-header mb-4 sm:mb-6">
             <div class="flex items-center justify-between">
@@ -262,6 +596,89 @@
                     <span class="font-gaming text-sm sm:text-lg truncate max-w-[150px] sm:max-w-none">{{ $game->theme?->name ?? 'Partie Classique' }}</span>
                 </div>
                 <div class="flex items-center space-x-2">
+                    <!-- Contrôles audio -->
+                    <div class="relative" x-data="{ showAudioPanel: false }">
+                        <button @click="showAudioPanel = !showAudioPanel"
+                                class="flex items-center space-x-1 bg-white/5 rounded-lg px-3 py-1.5 border border-white/10 hover:bg-white/10 transition">
+                            <span x-text="musicPlaying || soundEnabled ? '🔊' : '🔇'"></span>
+                            <span class="hidden sm:inline text-xs text-gray-300">Audio</span>
+                            <span class="text-xs text-gray-500" x-text="showAudioPanel ? '▲' : '▼'"></span>
+                        </button>
+
+                        <!-- Panneau de contrôle audio -->
+                        <div x-show="showAudioPanel"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 transform -translate-y-2"
+                             x-transition:enter-end="opacity-100 transform translate-y-0"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100"
+                             x-transition:leave-end="opacity-0"
+                             @click.outside="showAudioPanel = false"
+                             class="absolute right-0 top-full mt-2 w-64 bg-gray-900/95 backdrop-blur-sm border border-white/10 rounded-xl p-4 shadow-xl z-50">
+
+                            <h4 class="text-sm font-gaming text-gray-300 mb-4">Paramètres Audio</h4>
+
+                            <!-- Musique de fond -->
+                            <div class="mb-4" x-show="themeSounds?.music">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-sm text-gray-400 flex items-center space-x-2">
+                                        <span>🎵</span>
+                                        <span>Musique</span>
+                                    </label>
+                                    <button @click="toggleMusic()"
+                                            class="px-2 py-0.5 rounded text-xs transition"
+                                            :class="musicPlaying ? 'bg-purple-500/30 text-purple-300' : 'bg-gray-700 text-gray-400'">
+                                        <span x-text="musicPlaying ? 'ON' : 'OFF'"></span>
+                                    </button>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-xs text-gray-500">🔈</span>
+                                    <input type="range"
+                                           min="0" max="100"
+                                           :value="musicVolume * 100"
+                                           @input="setMusicVolume($event.target.value / 100)"
+                                           :style="'--val: ' + (musicVolume * 100) + '%'"
+                                           class="flex-1 volume-slider music-slider">
+                                    <span class="text-xs text-gray-500">🔊</span>
+                                    <span class="text-xs text-gray-400 w-8 text-right" x-text="Math.round(musicVolume * 100) + '%'"></span>
+                                </div>
+                            </div>
+
+                            <!-- Effets sonores -->
+                            <div class="mb-2">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-sm text-gray-400 flex items-center space-x-2">
+                                        <span>🔔</span>
+                                        <span>Effets sonores</span>
+                                    </label>
+                                    <button @click="toggleSound()"
+                                            class="px-2 py-0.5 rounded text-xs transition"
+                                            :class="soundEnabled ? 'bg-green-500/30 text-green-300' : 'bg-gray-700 text-gray-400'">
+                                        <span x-text="soundEnabled ? 'ON' : 'OFF'"></span>
+                                    </button>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-xs text-gray-500">🔈</span>
+                                    <input type="range"
+                                           min="0" max="100"
+                                           :value="soundVolume * 100"
+                                           @input="setSoundVolume($event.target.value / 100)"
+                                           :style="'--val: ' + (soundVolume * 100) + '%'"
+                                           class="flex-1 volume-slider sfx-slider">
+                                    <span class="text-xs text-gray-500">🔊</span>
+                                    <span class="text-xs text-gray-400 w-8 text-right" x-text="Math.round(soundVolume * 100) + '%'"></span>
+                                </div>
+                            </div>
+
+                            <!-- Bouton tout couper -->
+                            <div class="border-t border-white/10 pt-3 mt-3">
+                                <button @click="muteAll()"
+                                        class="w-full px-3 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 rounded-lg text-xs transition">
+                                    🔇 Tout couper
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <!-- Contrôles de zoom (masqués sur très petit écran) -->
                     <div class="hidden sm:flex items-center space-x-2 bg-white/5 rounded-lg px-3 py-1">
                         <button @click="zoomOut()" class="text-gray-400 hover:text-white transition text-lg px-1" title="Réduire">
@@ -456,12 +873,20 @@
                                  @dragover.prevent
                                  @drop="handleDrop($event, rowIndex, colIndex)">
                                 
-                                <div x-show="square" 
+                                <div x-show="square"
                                      class="chess-piece"
-                                     :class="{ 'black-piece': square?.color === 'b' }"
+                                     :class="{
+                                         'black-piece': square?.color === 'b',
+                                         'selected-piece': isSelectedPiece(rowIndex, colIndex),
+                                         'just-moved': isJustMoved(rowIndex, colIndex),
+                                         'in-check': isPieceInCheck(rowIndex, colIndex),
+                                         'checkmated': isCheckmated(rowIndex, colIndex),
+                                         'victory': isVictoryPiece(rowIndex, colIndex)
+                                     }"
                                      draggable="true"
                                      @dragstart="handleDragStart($event, rowIndex, colIndex)"
-                                     @dragend="handleDragEnd($event)">
+                                     @dragend="handleDragEnd($event)"
+                                     :data-square="getSquareNotation(rowIndex, colIndex)"
                                     <!-- Si la carte a une image -->
                                     <template x-if="getCardImage(square)">
                                         <img :src="getCardImage(square)" :alt="getCardName(square)" class="card-image">
@@ -479,23 +904,37 @@
                 </div>
 
                 <!-- Statut de la partie -->
-                <div class="mt-4 text-center">
-                    <div x-show="gameStatus === 'checkmate'" class="text-2xl font-gaming text-amber-400">
-                        Échec et Mat ! 
-                        <span x-text="winner === playerColor ? '🎉 Victoire !' : 'Défaite'"></span>
-                    </div>
-                    <div x-show="gameStatus === 'stalemate'" class="text-2xl font-gaming text-gray-400">
-                        Pat - Match Nul
-                    </div>
-                    <div x-show="gameStatus === 'draw'" class="text-2xl font-gaming text-gray-400">
-                        Match Nul
-                    </div>
-                    <div x-show="gameStatus === 'playing' && isMyTurn" class="text-lg text-indigo-400">
-                        À vous de jouer !
-                    </div>
-                    <div x-show="gameStatus === 'playing' && !isMyTurn" class="text-lg text-gray-400">
-                        <span x-show="isAiGame">L'IA réfléchit...</span>
-                        <span x-show="!isAiGame">En attente de l'adversaire...</span>
+                <div class="mt-4 w-full flex justify-center">
+                    <div class="text-center">
+                        <div x-show="gameStatus === 'checkmate'"
+                             class="game-end-overlay px-6 py-3 rounded-xl"
+                             :class="winner === playerColor ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'">
+                            <div class="text-2xl font-gaming" :class="winner === playerColor ? 'text-green-400' : 'text-red-400'">
+                                Échec et Mat !
+                            </div>
+                            <div class="text-3xl mt-2" x-text="winner === playerColor ? '🎉 Victoire !' : '😔 Défaite'"></div>
+                        </div>
+                        <div x-show="gameStatus === 'stalemate'" class="game-end-overlay px-6 py-3 rounded-xl bg-gray-500/20 border border-gray-500/50">
+                            <div class="text-2xl font-gaming text-gray-400">Pat</div>
+                            <div class="text-xl mt-1 text-gray-300">Match Nul 🤝</div>
+                        </div>
+                        <div x-show="gameStatus === 'draw'" class="game-end-overlay px-6 py-3 rounded-xl bg-gray-500/20 border border-gray-500/50">
+                            <div class="text-2xl font-gaming text-gray-400">Match Nul 🤝</div>
+                        </div>
+                        <div x-show="gameStatus === 'playing' && isMyTurn"
+                             class="text-lg text-indigo-400 turn-indicator-active px-4 py-2 rounded-lg bg-indigo-500/10 border border-indigo-500/30">
+                            ⚔️ À vous de jouer !
+                        </div>
+                        <div x-show="gameStatus === 'playing' && !isMyTurn" class="text-lg text-gray-400">
+                            <span x-show="isAiGame" class="inline-flex items-center justify-center">
+                                <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                L'IA réfléchit...
+                            </span>
+                            <span x-show="!isAiGame">⏳ En attente de l'adversaire...</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -626,6 +1065,19 @@
                 capturedByMe: [],
                 capturedByOpponent: [],
 
+                // Animations
+                animatingSquare: null,
+                lastMovedSquare: null,
+
+                // Sons et musique
+                themeSounds: @json($themeSounds ?? null),
+                musicPlayer: null,
+                musicPlaying: false,
+                soundEnabled: true,
+                musicVolume: 0.3,
+                soundVolume: 0.7,
+                activeSounds: {}, // Pour éviter les chevauchements
+
                 // Zoom
                 zoomLevel: 100,
                 baseSize: 560,
@@ -695,6 +1147,9 @@
                     if (!this.isAiGame && window.Echo) {
                         this.setupWebSocket();
                     }
+
+                    // Initialiser la musique
+                    this.initMusic();
                 },
 
                 setupWebSocket() {
@@ -720,13 +1175,24 @@
                     });
 
                     if (move) {
-                        // Mettre à jour les pièces capturées
+                        // Animation et son de capture
                         if (data.captured) {
+                            this.playCaptureAnimation(data.to);
+                            this.playSound('capture');
                             const capturedPiece = (this.playerColor === 'white' ? 'w' : 'b') + data.captured;
                             this.capturedByOpponent.push(capturedPiece);
+                        } else {
+                            this.playSound('move');
                         }
 
                         this.lastMove = { from: data.from, to: data.to };
+                        this.lastMovedSquare = data.to;
+
+                        // Reset l'animation après un délai
+                        setTimeout(() => {
+                            this.lastMovedSquare = null;
+                        }, 400);
+
                         this.updateBoard();
                         this.updateMovesHistory(move);
                         this.updateTurn();
@@ -735,8 +1201,22 @@
                         if (data.isCheckmate) {
                             this.gameStatus = 'checkmate';
                             this.winner = data.winner;
+                            this.playSound('checkmate');
+                            // Animation de défaite ou victoire
+                            if (this.winner === this.playerColor) {
+                                setTimeout(() => {
+                                    this.playVictoryAnimation();
+                                    this.playSound('victory');
+                                }, 500);
+                            } else {
+                                setTimeout(() => this.playSound('defeat'), 500);
+                            }
                         } else {
                             this.checkGameEnd();
+                            // Son d'échec
+                            if (this.chess.in_check()) {
+                                this.playSound('check');
+                            }
                         }
 
                         // Scroll l'historique
@@ -891,6 +1371,200 @@
                     return piece && piece.type === 'k' && piece.color === this.chess.turn();
                 },
 
+                // Fonctions d'animation
+                getSquareNotation(displayRow, displayCol) {
+                    const { row, col } = this.displayToReal(displayRow, displayCol);
+                    return this.indexToSquare(row, col);
+                },
+
+                isSelectedPiece(displayRow, displayCol) {
+                    if (!this.selectedSquare) return false;
+                    const { row, col } = this.displayToReal(displayRow, displayCol);
+                    return this.selectedSquare.row === row && this.selectedSquare.col === col;
+                },
+
+                isJustMoved(displayRow, displayCol) {
+                    if (!this.lastMovedSquare) return false;
+                    const { row, col } = this.displayToReal(displayRow, displayCol);
+                    const square = this.indexToSquare(row, col);
+                    return this.lastMovedSquare === square;
+                },
+
+                isPieceInCheck(displayRow, displayCol) {
+                    if (!this.chess.in_check()) return false;
+                    const { row, col } = this.displayToReal(displayRow, displayCol);
+                    const piece = this.board[row]?.[col];
+                    return piece && piece.type === 'k' && piece.color === this.chess.turn();
+                },
+
+                isCheckmated(displayRow, displayCol) {
+                    if (!this.chess.in_checkmate()) return false;
+                    const { row, col } = this.displayToReal(displayRow, displayCol);
+                    const piece = this.board[row]?.[col];
+                    return piece && piece.type === 'k' && piece.color === this.chess.turn();
+                },
+
+                isVictoryPiece(displayRow, displayCol) {
+                    if (!this.chess.in_checkmate()) return false;
+                    const { row, col } = this.displayToReal(displayRow, displayCol);
+                    const piece = this.board[row]?.[col];
+                    const winnerColor = this.chess.turn() === 'w' ? 'b' : 'w';
+                    return piece && piece.type === 'k' && piece.color === winnerColor;
+                },
+
+                // Animation de capture avec particules
+                playCaptureAnimation(square) {
+                    const squareEl = document.querySelector(`[data-square="${square}"]`);
+                    if (!squareEl) return;
+
+                    const rect = squareEl.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+
+                    // Créer des particules
+                    const colors = ['#ef4444', '#f97316', '#eab308', '#ffffff', '#a855f7'];
+                    for (let i = 0; i < 12; i++) {
+                        const particle = document.createElement('div');
+                        particle.className = 'capture-particle';
+                        particle.style.left = centerX + 'px';
+                        particle.style.top = centerY + 'px';
+                        particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+
+                        // Direction aléatoire
+                        const angle = (i / 12) * Math.PI * 2;
+                        const distance = 30 + Math.random() * 50;
+                        particle.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
+                        particle.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
+
+                        document.body.appendChild(particle);
+
+                        // Supprimer après animation
+                        setTimeout(() => particle.remove(), 600);
+                    }
+
+                    // Jouer un son si disponible
+                    this.playSound('capture');
+                },
+
+                // Animation de victoire avec confetti
+                playVictoryAnimation() {
+                    const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#ffffff'];
+
+                    for (let i = 0; i < 50; i++) {
+                        setTimeout(() => {
+                            const confetti = document.createElement('div');
+                            confetti.className = 'confetti';
+                            confetti.style.left = Math.random() * 100 + 'vw';
+                            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                            confetti.style.animationDuration = (2 + Math.random() * 2) + 's';
+                            confetti.style.animationDelay = Math.random() * 0.5 + 's';
+
+                            if (Math.random() > 0.5) {
+                                confetti.style.borderRadius = '0';
+                                confetti.style.transform = 'rotate(' + Math.random() * 360 + 'deg)';
+                            }
+
+                            document.body.appendChild(confetti);
+                            setTimeout(() => confetti.remove(), 5000);
+                        }, i * 50);
+                    }
+                },
+
+                // Initialiser la musique de fond
+                initMusic() {
+                    if (this.themeSounds?.music) {
+                        this.musicPlayer = new Audio(this.themeSounds.music);
+                        this.musicPlayer.loop = true;
+                        this.musicPlayer.volume = this.musicVolume;
+                    }
+                },
+
+                // Jouer/Pause la musique
+                toggleMusic() {
+                    if (!this.musicPlayer) return;
+
+                    if (this.musicPlaying) {
+                        this.musicPlayer.pause();
+                    } else {
+                        this.musicPlayer.play().catch(e => console.log('Autoplay bloqué'));
+                    }
+                    this.musicPlaying = !this.musicPlaying;
+                },
+
+                // Activer/Désactiver les sons
+                toggleSound() {
+                    this.soundEnabled = !this.soundEnabled;
+                    // Stopper tous les sons si on désactive
+                    if (!this.soundEnabled) {
+                        this.stopAllSounds();
+                    }
+                },
+
+                // Régler le volume de la musique
+                setMusicVolume(volume) {
+                    this.musicVolume = Math.max(0, Math.min(1, volume));
+                    if (this.musicPlayer) {
+                        this.musicPlayer.volume = this.musicVolume;
+                    }
+                },
+
+                // Régler le volume des effets sonores
+                setSoundVolume(volume) {
+                    this.soundVolume = Math.max(0, Math.min(1, volume));
+                    // Appliquer aux sons actifs
+                    Object.values(this.activeSounds).forEach(audio => {
+                        audio.volume = this.soundVolume;
+                    });
+                },
+
+                // Tout couper
+                muteAll() {
+                    // Stopper la musique
+                    if (this.musicPlayer && this.musicPlaying) {
+                        this.musicPlayer.pause();
+                        this.musicPlaying = false;
+                    }
+                    // Stopper et désactiver les effets
+                    this.soundEnabled = false;
+                    this.stopAllSounds();
+                },
+
+                // Jouer un son (avec gestion des chevauchements)
+                playSound(type) {
+                    if (!this.soundEnabled || !this.themeSounds) return;
+
+                    const soundUrl = this.themeSounds[type];
+                    if (soundUrl) {
+                        // Stopper le son précédent du même type s'il existe
+                        if (this.activeSounds[type]) {
+                            this.activeSounds[type].pause();
+                            this.activeSounds[type].currentTime = 0;
+                        }
+
+                        const audio = new Audio(soundUrl);
+                        audio.volume = this.soundVolume;
+                        this.activeSounds[type] = audio;
+
+                        audio.play().catch(e => console.log('Son bloqué:', e));
+
+                        // Nettoyer la référence quand le son est terminé
+                        audio.addEventListener('ended', () => {
+                            if (this.activeSounds[type] === audio) {
+                                delete this.activeSounds[type];
+                            }
+                        });
+                    }
+                },
+
+                // Stopper tous les sons actifs
+                stopAllSounds() {
+                    Object.values(this.activeSounds).forEach(audio => {
+                        audio.pause();
+                        audio.currentTime = 0;
+                    });
+                    this.activeSounds = {};
+                },
+
                 handleSquareClick(displayRow, displayCol) {
                     const { row, col } = this.displayToReal(displayRow, displayCol);
                     const piece = this.board[row]?.[col];
@@ -945,21 +1619,49 @@
                     });
 
                     if (move) {
-                        // Pièce capturée
+                        // Animation et son de capture
                         if (move.captured) {
+                            this.playCaptureAnimation(toSquare);
+                            this.playSound('capture');
                             const capturedPiece = (move.color === 'w' ? 'b' : 'w') + move.captured;
                             if (move.color === (this.playerColor === 'white' ? 'w' : 'b')) {
                                 this.capturedByMe.push(capturedPiece);
                             } else {
                                 this.capturedByOpponent.push(capturedPiece);
                             }
+                        } else {
+                            // Son de déplacement simple
+                            this.playSound('move');
                         }
-                        
+
                         this.lastMove = { from: fromSquare, to: toSquare };
+                        this.lastMovedSquare = toSquare;
+
+                        // Reset l'animation après un délai
+                        setTimeout(() => {
+                            this.lastMovedSquare = null;
+                        }, 400);
+
                         this.updateBoard();
                         this.updateMovesHistory(move);
                         this.updateTurn();
                         this.checkGameEnd();
+
+                        // Sons et animations de fin
+                        if (this.chess.in_checkmate()) {
+                            const winnerColor = this.chess.turn() === 'w' ? 'black' : 'white';
+                            this.playSound('checkmate');
+                            if (winnerColor === this.playerColor) {
+                                setTimeout(() => {
+                                    this.playVictoryAnimation();
+                                    this.playSound('victory');
+                                }, 500);
+                            } else {
+                                setTimeout(() => this.playSound('defeat'), 500);
+                            }
+                        } else if (this.chess.in_check()) {
+                            this.playSound('check');
+                        }
 
                         // Envoyer au serveur
                         await this.sendMoveToServer(move);
@@ -1042,6 +1744,7 @@
                     if (this.chess.in_checkmate()) {
                         this.gameStatus = 'checkmate';
                         this.winner = this.chess.turn() === 'w' ? 'black' : 'white';
+                        // L'animation de victoire est déjà gérée dans makeMove
                     } else if (this.chess.in_stalemate()) {
                         this.gameStatus = 'stalemate';
                     } else if (this.chess.in_draw() || this.chess.in_threefold_repetition()) {
