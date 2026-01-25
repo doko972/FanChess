@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Game;
 
+use App\Events\GameEnded;
+use App\Events\GameMoveMade;
 use App\Http\Controllers\Controller;
 use App\Models\Game;
 use App\Models\GameMove;
@@ -107,7 +109,23 @@ class GameController extends Controller
 
         $game->update($updateData);
 
-        // TODO: Broadcaster le coup via WebSocket
+        // Broadcaster le coup via WebSocket
+        broadcast(new GameMoveMade(
+            gameUuid: $game->uuid,
+            from: $validated['from'],
+            to: $validated['to'],
+            san: $validated['san'],
+            fen: $validated['fen'],
+            piece: $validated['piece'],
+            captured: $validated['captured'] ?? null,
+            promotion: $validated['promotion'] ?? null,
+            isCheck: $request->boolean('is_check'),
+            isCheckmate: $request->boolean('is_checkmate'),
+            isCastling: $request->boolean('is_castling'),
+            isEnPassant: $request->boolean('is_en_passant'),
+            winner: $request->boolean('is_checkmate') ? ($game->current_turn === 'white' ? 'black' : 'white') : null,
+            endReason: $request->boolean('is_checkmate') ? 'checkmate' : null,
+        ))->toOthers();
 
         return response()->json([
             'success' => true,
@@ -144,6 +162,14 @@ class GameController extends Controller
             'end_reason' => 'resignation',
             'ended_at' => now(),
         ]);
+
+        // Broadcaster la fin de partie
+        broadcast(new GameEnded(
+            gameUuid: $game->uuid,
+            reason: 'resignation',
+            winnerId: $winnerId,
+            winnerColor: $playerColor === 'white' ? 'black' : 'white',
+        ));
 
         return redirect()->route('lobby')->with('info', 'Vous avez abandonné la partie.');
     }

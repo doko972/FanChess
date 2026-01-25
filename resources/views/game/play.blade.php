@@ -480,12 +480,12 @@
 
                 init() {
                     console.log('Init FanChess - Player:', this.playerColor);
-                    
+
                     this.chess = new Chess('{{ $game->current_fen }}');
                     this.updateBoard();
                     this.loadMovesHistory();
                     this.updateTurn();
-                    
+
                     // Si c'est une partie IA et que l'IA joue en premier (joueur = noir)
                     if (this.isAiGame && this.playerColor === 'black' && this.currentTurn === 'white') {
                         setTimeout(() => this.makeAiMove(), 1000);
@@ -499,6 +499,72 @@
                             this.zoomLevel = 100;
                         }
                     });
+
+                    // Écouter les événements WebSocket (uniquement pour les parties PvP)
+                    if (!this.isAiGame && window.Echo) {
+                        this.setupWebSocket();
+                    }
+                },
+
+                setupWebSocket() {
+                    console.log('Setting up WebSocket for game:', this.gameUuid);
+
+                    window.Echo.private(`game.${this.gameUuid}`)
+                        .listen('.GameMoveMade', (e) => {
+                            console.log('Move received:', e);
+                            this.handleOpponentMove(e);
+                        })
+                        .listen('.GameEnded', (e) => {
+                            console.log('Game ended:', e);
+                            this.handleGameEnded(e);
+                        });
+                },
+
+                handleOpponentMove(data) {
+                    // Appliquer le coup reçu
+                    const move = this.chess.move({
+                        from: data.from,
+                        to: data.to,
+                        promotion: data.promotion || undefined
+                    });
+
+                    if (move) {
+                        // Mettre à jour les pièces capturées
+                        if (data.captured) {
+                            const capturedPiece = (this.playerColor === 'white' ? 'w' : 'b') + data.captured;
+                            this.capturedByOpponent.push(capturedPiece);
+                        }
+
+                        this.lastMove = { from: data.from, to: data.to };
+                        this.updateBoard();
+                        this.updateMovesHistory(move);
+                        this.updateTurn();
+
+                        // Vérifier fin de partie
+                        if (data.isCheckmate) {
+                            this.gameStatus = 'checkmate';
+                            this.winner = data.winner;
+                        } else {
+                            this.checkGameEnd();
+                        }
+
+                        // Scroll l'historique
+                        this.$nextTick(() => {
+                            const history = document.getElementById('moves-history');
+                            if (history) history.scrollTop = history.scrollHeight;
+                        });
+                    }
+                },
+
+                handleGameEnded(data) {
+                    this.gameStatus = data.reason === 'resignation' ? 'resignation' : 'ended';
+                    this.winner = data.winnerColor;
+
+                    // Afficher un message
+                    if (data.reason === 'resignation') {
+                        alert('Votre adversaire a abandonné. Vous avez gagné !');
+                        window.location.reload();
+                    }
                 },
 
                 updateBoard() {

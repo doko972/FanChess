@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Game;
 
+use App\Events\PlayerJoinedGame;
 use App\Http\Controllers\Controller;
 use App\Models\Game;
 use App\Models\Theme;
@@ -188,7 +189,12 @@ class LobbyController extends Controller
             'started_at' => now(),
         ]);
 
-        // TODO: Broadcaster l'événement pour notifier le joueur blanc
+        // Broadcaster l'événement pour notifier le joueur blanc
+        broadcast(new PlayerJoinedGame(
+            gameUuid: $game->uuid,
+            playerName: $user->name,
+            playerId: $user->id,
+        ))->toOthers();
 
         return redirect()->route('game.play', $game->uuid);
     }

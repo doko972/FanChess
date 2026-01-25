@@ -79,25 +79,38 @@
             const input = document.getElementById('share-link');
             input.select();
             document.execCommand('copy');
-            
+
             const btn = document.getElementById('copy-text');
             btn.textContent = 'Copié !';
             setTimeout(() => btn.textContent = 'Copier', 2000);
         }
 
-        // Polling pour vérifier si un adversaire a rejoint
+        const gameUuid = '{{ $game->uuid }}';
+
+        // Écouter via WebSocket quand un joueur rejoint
+        if (window.Echo) {
+            console.log('Setting up WebSocket for waiting room:', gameUuid);
+
+            window.Echo.private(`game.${gameUuid}`)
+                .listen('.PlayerJoinedGame', (e) => {
+                    console.log('Player joined:', e);
+                    window.location.href = '{{ route('game.play', $game->uuid) }}';
+                });
+        }
+
+        // Fallback: Polling pour vérifier si un adversaire a rejoint (si WebSocket ne fonctionne pas)
         setInterval(async () => {
             try {
                 const response = await fetch('{{ route('game.state', $game->uuid) }}');
                 const data = await response.json();
-                
+
                 if (data.status === 'in_progress') {
                     window.location.href = '{{ route('game.play', $game->uuid) }}';
                 }
             } catch (e) {
                 console.error('Erreur polling:', e);
             }
-        }, 3000);
+        }, 5000);
     </script>
     @endpush
 </x-app-layout>
