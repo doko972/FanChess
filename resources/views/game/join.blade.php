@@ -15,11 +15,11 @@
                 <div class="bg-white/5 rounded-xl p-4 mb-6">
                     <div class="flex items-center space-x-4">
                         <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center font-bold">
-                            {{ strtoupper(substr($game->whitePlayer->name, 0, 1)) }}
+                            {{ strtoupper(substr(($game->whitePlayer?->name ?? 'IA'), 0, 1)) }}
                         </div>
                         <div class="flex-1">
                             <div class="text-sm text-gray-400">Vous affrontez</div>
-                            <div class="font-medium">{{ $game->whitePlayer->name }}</div>
+                            <div class="font-medium">{{ ($game->whitePlayer?->name ?? 'IA') }}</div>
                             <div class="text-xs text-gray-500">
                                 Joue avec : <span class="text-indigo-400">{{ $game->whiteTheme?->name ?? 'Classique' }}</span>
                             </div>

@@ -212,7 +212,7 @@
                                         <div class="font-medium text-sm sm:text-base truncate">
                                             vs {{ $game->white_player_id === auth()->id()
                                                 ? ($game->blackPlayer?->name ?? 'IA')
-                                                : $game->whitePlayer->name }}
+                                                : ($game->whitePlayer?->name ?? 'IA') }}
                                         </div>
                                         <div class="text-xs sm:text-sm text-gray-400 truncate">
                                             {{ $game->whiteTheme?->name ?? 'Sans thème' }} •
@@ -241,10 +241,10 @@
                                 <div class="flex items-center justify-between p-3 sm:p-4 bg-white/5 rounded-xl gap-3">
                                     <div class="flex items-center space-x-3 sm:space-x-4 min-w-0">
                                         <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center font-bold flex-shrink-0 text-sm sm:text-base">
-                                            {{ strtoupper(substr($game->whitePlayer->name, 0, 1)) }}
+                                            {{ strtoupper(substr(($game->whitePlayer?->name ?? 'IA'), 0, 1)) }}
                                         </div>
                                         <div class="min-w-0">
-                                            <div class="font-medium text-sm sm:text-base truncate">{{ $game->whitePlayer->name }}</div>
+                                            <div class="font-medium text-sm sm:text-base truncate">{{ ($game->whitePlayer?->name ?? 'IA') }}</div>
                                             <div class="text-xs sm:text-sm text-gray-400 truncate">
                                                 {{ $game->whiteTheme?->name ?? 'Sans thème' }}
                                                 @if($game->timer_enabled)

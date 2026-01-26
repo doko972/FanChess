@@ -38,6 +38,9 @@ class Game extends Model
     ];
 
     protected $casts = [
+        'white_player_id' => 'integer',
+        'black_player_id' => 'integer',
+        'winner_id' => 'integer',
         'timer_enabled' => 'boolean',
         'started_at' => 'datetime',
         'ended_at' => 'datetime',

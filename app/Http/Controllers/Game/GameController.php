@@ -28,6 +28,15 @@ class GameController extends Controller
         $user = auth()->user();
         $playerColor = $game->getPlayerColor($user);
 
+        // Pour les parties IA, déduire la couleur si getPlayerColor retourne null
+        if (!$playerColor && $game->isAiGame()) {
+            if ($game->white_player_id && !$game->black_player_id) {
+                $playerColor = 'white';
+            } elseif ($game->black_player_id && !$game->white_player_id) {
+                $playerColor = 'black';
+            }
+        }
+
         // Vérifier que le joueur fait partie de la partie
         if (!$playerColor && !$game->isAiGame()) {
             abort(403, 'Vous ne participez pas à cette partie.');

@@ -137,7 +137,7 @@
                         @foreach($recentGames as $game)
                         <tr class="border-t border-gray-700">
                             <td class="p-4">
-                                <span class="text-white">{{ $game->whitePlayer->name }}</span>
+                                <span class="text-white">{{ $game->whitePlayer?->name ?? 'IA' }}</span>
                                 <span class="text-gray-500 mx-2">vs</span>
                                 <span class="text-white">{{ $game->blackPlayer?->name ?? 'IA' }}</span>
                             </td>

@@ -724,7 +724,7 @@
                     @if($game->isAiGame())
                         🤖
                     @else
-                        {{ $playerColor === 'white' ? strtoupper(substr($game->blackPlayer?->name ?? '?', 0, 1)) : strtoupper(substr($game->whitePlayer->name, 0, 1)) }}
+                        {{ $playerColor === 'white' ? strtoupper(substr($game->blackPlayer?->name ?? '?', 0, 1)) : strtoupper(substr(($game->whitePlayer?->name ?? 'IA'), 0, 1)) }}
                     @endif
                 </div>
                 <div class="flex-1 min-w-0">
@@ -732,7 +732,7 @@
                         @if($game->isAiGame())
                             IA (Niv. {{ $game->ai_level }})
                         @else
-                            {{ $playerColor === 'white' ? ($game->blackPlayer?->name ?? 'En attente...') : $game->whitePlayer->name }}
+                            {{ $playerColor === 'white' ? ($game->blackPlayer?->name ?? 'En attente...') : ($game->whitePlayer?->name ?? 'IA') }}
                         @endif
                     </div>
                 </div>
@@ -762,7 +762,7 @@
                             @if($game->isAiGame())
                                 🤖
                             @else
-                                {{ $playerColor === 'white' ? strtoupper(substr($game->blackPlayer?->name ?? '?', 0, 1)) : strtoupper(substr($game->whitePlayer->name, 0, 1)) }}
+                                {{ $playerColor === 'white' ? strtoupper(substr($game->blackPlayer?->name ?? '?', 0, 1)) : strtoupper(substr(($game->whitePlayer?->name ?? 'IA'), 0, 1)) }}
                             @endif
                         </div>
                         <div class="flex-1">
@@ -770,7 +770,7 @@
                                 @if($game->isAiGame())
                                     Stockfish (Niv. {{ $game->ai_level }})
                                 @else
-                                    {{ $playerColor === 'white' ? ($game->blackPlayer?->name ?? 'En attente...') : $game->whitePlayer->name }}
+                                    {{ $playerColor === 'white' ? ($game->blackPlayer?->name ?? 'En attente...') : ($game->whitePlayer?->name ?? 'IA') }}
                                 @endif
                             </div>
                             <div class="text-xs text-gray-400">
@@ -1110,7 +1110,8 @@
                 },
 
                 init() {
-                    console.log('Init FanChess - Player:', this.playerColor);
+                    console.log('Init FanChess - Player:', this.playerColor, 'isAiGame:', this.isAiGame, 'currentTurn:', this.currentTurn);
+                    console.log('DEBUG playerColor:', JSON.stringify(this.playerColor), 'length:', this.playerColor.length);
 
                     // Calculer la taille initiale de l'échiquier
                     this.isMobile = window.innerWidth < 1024;
@@ -1265,6 +1266,7 @@
                 updateTurn() {
                     this.currentTurn = this.chess.turn() === 'w' ? 'white' : 'black';
                     this.isMyTurn = this.currentTurn === this.playerColor;
+                    console.log('updateTurn:', this.currentTurn, 'isMyTurn:', this.isMyTurn, 'playerColor:', this.playerColor);
                 },
 
                 getPieceIcon(piece) {
@@ -1597,18 +1599,22 @@
                     this.legalMoves = [];
                 },
 
-                async makeMove(from, to) {
+                async makeMove(from, to, aiPromotion = null) {
                     const fromSquare = this.indexToSquare(from.row, from.col);
                     const toSquare = this.indexToSquare(to.row, to.col);
-                    
+
                     // Vérifier promotion
                     let promotion = null;
                     const piece = this.chess.get(fromSquare);
                     if (piece && piece.type === 'p') {
                         const targetRow = piece.color === 'w' ? 0 : 7;
                         if (to.row === targetRow) {
-                            promotion = prompt('Promotion: q (Dame), r (Tour), b (Fou), n (Cavalier)', 'q');
-                            if (!['q', 'r', 'b', 'n'].includes(promotion)) promotion = 'q';
+                            if (aiPromotion) {
+                                promotion = aiPromotion;
+                            } else {
+                                promotion = prompt('Promotion: q (Dame), r (Tour), b (Fou), n (Cavalier)', 'q');
+                                if (!['q', 'r', 'b', 'n'].includes(promotion)) promotion = 'q';
+                            }
                         }
                     }
 
@@ -1705,18 +1711,18 @@
 
                 makeAiMove() {
                     if (this.gameStatus !== 'playing') return;
-                    
+
                     const moves = this.chess.moves({ verbose: true });
                     if (moves.length > 0) {
                         // IA basique : priorise captures et échecs
                         let bestMoves = moves.filter(m => m.captured || m.san.includes('+'));
                         if (bestMoves.length === 0) bestMoves = moves;
-                        
+
                         const randomMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
                         const from = this.squareToIndex(randomMove.from);
                         const to = this.squareToIndex(randomMove.to);
-                        
-                        this.makeMove(from, to);
+
+                        this.makeMove(from, to, randomMove.promotion || 'q');
                     }
                 },
 
