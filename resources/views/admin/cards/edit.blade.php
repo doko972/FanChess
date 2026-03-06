@@ -81,8 +81,8 @@
                     @if($card->image)
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Image actuelle</label>
-                        <div class="relative inline-block">
-                            <img src="{{ Storage::url($card->image) }}" alt="{{ $card->name }}" class="h-32 rounded-lg">
+                        <div class="relative inline-block bg-gray-700 rounded-lg">
+                            <img src="{{ Storage::url($card->image) }}" alt="{{ $card->name }}" class="h-32 object-contain rounded-lg">
                             <form action="{{ route('admin.cards.delete-image', [$card, 'main']) }}" method="POST" class="absolute -top-2 -right-2">
                                 @csrf
                                 @method('DELETE')
@@ -95,8 +95,8 @@
                     @if($card->image_evolution)
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Image évolution actuelle</label>
-                        <div class="relative inline-block">
-                            <img src="{{ Storage::url($card->image_evolution) }}" alt="Évolution" class="h-32 rounded-lg">
+                        <div class="relative inline-block bg-gray-700 rounded-lg">
+                            <img src="{{ Storage::url($card->image_evolution) }}" alt="Évolution" class="h-32 object-contain rounded-lg">
                             <form action="{{ route('admin.cards.delete-image', [$card, 'evolution']) }}" method="POST" class="absolute -top-2 -right-2">
                                 @csrf
                                 @method('DELETE')

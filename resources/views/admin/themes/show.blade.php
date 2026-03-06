@@ -58,10 +58,10 @@
                 @if($card)
                     <!-- Carte existante -->
                     <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden hover:border-indigo-500 transition group">
-                        <div class="aspect-square relative">
+                        <div class="aspect-square relative bg-gradient-to-br {{ $color === 'white' ? 'from-gray-100 to-gray-200' : 'from-gray-700 to-gray-800' }}">
                             @if($card->image)
-                                <img src="{{ Storage::url($card->image) }}" alt="{{ $card->name }}" 
-                                     class="w-full h-full object-cover">
+                                <img src="{{ Storage::url($card->image) }}" alt="{{ $card->name }}"
+                                     class="w-full h-full object-contain p-2">
                             @else
                                 <div class="w-full h-full flex items-center justify-center bg-gradient-to-br {{ $color === 'white' ? 'from-gray-200 to-gray-300 text-gray-800' : 'from-gray-700 to-gray-800 text-gray-300' }}">
                                     <span class="text-5xl">{{ $pieceIcons[$pieceType] }}</span>

@@ -90,6 +90,127 @@
                            class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-500 file:text-white file:cursor-pointer">
                 </div>
 
+                <!-- Section Sons et Musique -->
+                <div class="border-t border-gray-700 pt-6">
+                    <h3 class="text-lg font-gaming text-indigo-400 mb-4">🎵 Sons et Musique</h3>
+
+                    <!-- Musique de fond -->
+                    <div class="mb-4">
+                        <label for="music_file" class="block text-sm font-medium text-gray-300 mb-2">
+                            Musique de fond (MP3, WAV, OGG - max 10MB)
+                        </label>
+                        @if($theme->music_file)
+                            <div class="mb-2 flex items-center space-x-2">
+                                <audio controls class="h-8">
+                                    <source src="{{ Storage::url($theme->music_file) }}" type="audio/mpeg">
+                                </audio>
+                                <span class="text-xs text-gray-400">Fichier actuel</span>
+                            </div>
+                        @endif
+                        <input type="file" name="music_file" id="music_file" accept="audio/*"
+                               class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-500 file:text-white file:cursor-pointer">
+                    </div>
+
+                    <!-- Sons d'actions -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Son déplacement -->
+                        <div>
+                            <label for="sound_move" class="block text-sm font-medium text-gray-300 mb-2">
+                                🎯 Son déplacement
+                            </label>
+                            @if($theme->sound_move)
+                                <div class="mb-2">
+                                    <audio controls class="h-8 w-full">
+                                        <source src="{{ Storage::url($theme->sound_move) }}" type="audio/mpeg">
+                                    </audio>
+                                </div>
+                            @endif
+                            <input type="file" name="sound_move" id="sound_move" accept="audio/*"
+                                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-600 file:text-white file:cursor-pointer">
+                        </div>
+
+                        <!-- Son capture -->
+                        <div>
+                            <label for="sound_capture" class="block text-sm font-medium text-gray-300 mb-2">
+                                💥 Son capture
+                            </label>
+                            @if($theme->sound_capture)
+                                <div class="mb-2">
+                                    <audio controls class="h-8 w-full">
+                                        <source src="{{ Storage::url($theme->sound_capture) }}" type="audio/mpeg">
+                                    </audio>
+                                </div>
+                            @endif
+                            <input type="file" name="sound_capture" id="sound_capture" accept="audio/*"
+                                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-600 file:text-white file:cursor-pointer">
+                        </div>
+
+                        <!-- Son échec -->
+                        <div>
+                            <label for="sound_check" class="block text-sm font-medium text-gray-300 mb-2">
+                                ⚠️ Son échec
+                            </label>
+                            @if($theme->sound_check)
+                                <div class="mb-2">
+                                    <audio controls class="h-8 w-full">
+                                        <source src="{{ Storage::url($theme->sound_check) }}" type="audio/mpeg">
+                                    </audio>
+                                </div>
+                            @endif
+                            <input type="file" name="sound_check" id="sound_check" accept="audio/*"
+                                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-600 file:text-white file:cursor-pointer">
+                        </div>
+
+                        <!-- Son échec et mat -->
+                        <div>
+                            <label for="sound_checkmate" class="block text-sm font-medium text-gray-300 mb-2">
+                                👑 Son échec et mat
+                            </label>
+                            @if($theme->sound_checkmate)
+                                <div class="mb-2">
+                                    <audio controls class="h-8 w-full">
+                                        <source src="{{ Storage::url($theme->sound_checkmate) }}" type="audio/mpeg">
+                                    </audio>
+                                </div>
+                            @endif
+                            <input type="file" name="sound_checkmate" id="sound_checkmate" accept="audio/*"
+                                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-600 file:text-white file:cursor-pointer">
+                        </div>
+
+                        <!-- Son victoire -->
+                        <div>
+                            <label for="sound_victory" class="block text-sm font-medium text-gray-300 mb-2">
+                                🎉 Son victoire
+                            </label>
+                            @if($theme->sound_victory)
+                                <div class="mb-2">
+                                    <audio controls class="h-8 w-full">
+                                        <source src="{{ Storage::url($theme->sound_victory) }}" type="audio/mpeg">
+                                    </audio>
+                                </div>
+                            @endif
+                            <input type="file" name="sound_victory" id="sound_victory" accept="audio/*"
+                                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-600 file:text-white file:cursor-pointer">
+                        </div>
+
+                        <!-- Son défaite -->
+                        <div>
+                            <label for="sound_defeat" class="block text-sm font-medium text-gray-300 mb-2">
+                                😔 Son défaite
+                            </label>
+                            @if($theme->sound_defeat)
+                                <div class="mb-2">
+                                    <audio controls class="h-8 w-full">
+                                        <source src="{{ Storage::url($theme->sound_defeat) }}" type="audio/mpeg">
+                                    </audio>
+                                </div>
+                            @endif
+                            <input type="file" name="sound_defeat" id="sound_defeat" accept="audio/*"
+                                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-600 file:text-white file:cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Options -->
                 <div class="flex space-x-6">
                     <label class="flex items-center">

@@ -43,6 +43,13 @@ class ThemeController extends Controller
             'secondary_color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'accent_color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'background_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'music_file' => 'nullable|file|mimes:mp3,wav,ogg|max:10240',
+            'sound_move' => 'nullable|file|mimes:mp3,wav,ogg|max:1024',
+            'sound_capture' => 'nullable|file|mimes:mp3,wav,ogg|max:1024',
+            'sound_check' => 'nullable|file|mimes:mp3,wav,ogg|max:1024',
+            'sound_checkmate' => 'nullable|file|mimes:mp3,wav,ogg|max:1024',
+            'sound_victory' => 'nullable|file|mimes:mp3,wav,ogg|max:2048',
+            'sound_defeat' => 'nullable|file|mimes:mp3,wav,ogg|max:2048',
             'is_active' => 'boolean',
             'is_premium' => 'boolean',
             'sort_order' => 'integer|min:0',
@@ -56,6 +63,14 @@ class ThemeController extends Controller
         if ($request->hasFile('background_image')) {
             $validated['background_image'] = $request->file('background_image')
                 ->store('themes/backgrounds', 'public');
+        }
+
+        // Upload fichiers audio
+        $audioFields = ['music_file', 'sound_move', 'sound_capture', 'sound_check', 'sound_checkmate', 'sound_victory', 'sound_defeat'];
+        foreach ($audioFields as $field) {
+            if ($request->hasFile($field)) {
+                $validated[$field] = $request->file($field)->store('themes/sounds', 'public');
+            }
         }
 
         Theme::create($validated);
@@ -101,6 +116,13 @@ class ThemeController extends Controller
             'secondary_color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'accent_color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'background_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'music_file' => 'nullable|file|mimes:mp3,wav,ogg|max:10240',
+            'sound_move' => 'nullable|file|mimes:mp3,wav,ogg|max:1024',
+            'sound_capture' => 'nullable|file|mimes:mp3,wav,ogg|max:1024',
+            'sound_check' => 'nullable|file|mimes:mp3,wav,ogg|max:1024',
+            'sound_checkmate' => 'nullable|file|mimes:mp3,wav,ogg|max:1024',
+            'sound_victory' => 'nullable|file|mimes:mp3,wav,ogg|max:2048',
+            'sound_defeat' => 'nullable|file|mimes:mp3,wav,ogg|max:2048',
             'is_active' => 'boolean',
             'is_premium' => 'boolean',
             'sort_order' => 'integer|min:0',
@@ -120,6 +142,18 @@ class ThemeController extends Controller
                 ->store('themes/backgrounds', 'public');
         }
 
+        // Upload fichiers audio
+        $audioFields = ['music_file', 'sound_move', 'sound_capture', 'sound_check', 'sound_checkmate', 'sound_victory', 'sound_defeat'];
+        foreach ($audioFields as $field) {
+            if ($request->hasFile($field)) {
+                // Supprimer l'ancien fichier
+                if ($theme->$field) {
+                    Storage::disk('public')->delete($theme->$field);
+                }
+                $validated[$field] = $request->file($field)->store('themes/sounds', 'public');
+            }
+        }
+
         $theme->update($validated);
 
         return redirect()
@@ -137,6 +171,14 @@ class ThemeController extends Controller
         // Supprimer l'image de fond
         if ($theme->background_image) {
             Storage::disk('public')->delete($theme->background_image);
+        }
+
+        // Supprimer les fichiers audio
+        $audioFields = ['music_file', 'sound_move', 'sound_capture', 'sound_check', 'sound_checkmate', 'sound_victory', 'sound_defeat'];
+        foreach ($audioFields as $field) {
+            if ($theme->$field) {
+                Storage::disk('public')->delete($theme->$field);
+            }
         }
 
         // Supprimer les images des cartes

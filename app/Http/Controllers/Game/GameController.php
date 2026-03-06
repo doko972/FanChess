@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Game;
 
+use App\Events\GameEnded;
+use App\Events\GameMoveMade;
 use App\Http\Controllers\Controller;
 use App\Models\Game;
 use App\Models\GameMove;
@@ -17,27 +19,81 @@ class GameController extends Controller
         $game = Game::with([
             'whitePlayer',
             'blackPlayer',
-            'theme.cards',
+            'whiteTheme.cards',
+            'blackTheme.cards',
+            'theme.cards', // Legacy fallback
             'moves'
         ])->where('uuid', $uuid)->firstOrFail();
 
         $user = auth()->user();
         $playerColor = $game->getPlayerColor($user);
 
+        // Pour les parties IA, déduire la couleur si getPlayerColor retourne null
+        if (!$playerColor && $game->isAiGame()) {
+            if ($game->white_player_id && !$game->black_player_id) {
+                $playerColor = 'white';
+            } elseif ($game->black_player_id && !$game->white_player_id) {
+                $playerColor = 'black';
+            }
+        }
+
         // Vérifier que le joueur fait partie de la partie
         if (!$playerColor && !$game->isAiGame()) {
             abort(403, 'Vous ne participez pas à cette partie.');
         }
 
-        // Organiser les cartes par type et couleur
+        // Organiser les cartes par type et couleur (thèmes séparés)
         $cards = [];
-        if ($game->theme) {
-            foreach ($game->theme->cards as $card) {
-                $cards[$card->color][$card->piece_type] = $card;
+
+        // Cartes blanches depuis whiteTheme
+        $whiteTheme = $game->whiteTheme ?? $game->theme;
+        if ($whiteTheme) {
+            foreach ($whiteTheme->cards->where('color', 'white') as $card) {
+                $cards['white'][$card->piece_type] = $card;
             }
         }
 
-        return view('game.play', compact('game', 'playerColor', 'cards'));
+        // Cartes noires depuis blackTheme
+        $blackTheme = $game->blackTheme ?? $game->theme;
+        if ($blackTheme) {
+            foreach ($blackTheme->cards->where('color', 'black') as $card) {
+                $cards['black'][$card->piece_type] = $card;
+            }
+        }
+
+        // Récupérer les sons du thème du joueur
+        $playerTheme = $playerColor === 'white' ? $whiteTheme : $blackTheme;
+        $themeSounds = null;
+        $themeStyles = null;
+
+        if ($playerTheme) {
+            $themeSounds = [
+                'music' => $playerTheme->music_file ? asset('storage/' . $playerTheme->music_file) : null,
+                'move' => $playerTheme->sound_move ? asset('storage/' . $playerTheme->sound_move) : null,
+                'capture' => $playerTheme->sound_capture ? asset('storage/' . $playerTheme->sound_capture) : null,
+                'check' => $playerTheme->sound_check ? asset('storage/' . $playerTheme->sound_check) : null,
+                'checkmate' => $playerTheme->sound_checkmate ? asset('storage/' . $playerTheme->sound_checkmate) : null,
+                'victory' => $playerTheme->sound_victory ? asset('storage/' . $playerTheme->sound_victory) : null,
+                'defeat' => $playerTheme->sound_defeat ? asset('storage/' . $playerTheme->sound_defeat) : null,
+            ];
+
+            $themeStyles = [
+                'primaryColor' => $playerTheme->primary_color,
+                'secondaryColor' => $playerTheme->secondary_color,
+                'accentColor' => $playerTheme->accent_color,
+                'backgroundImage' => $playerTheme->background_image ? asset('storage/' . $playerTheme->background_image) : null,
+            ];
+
+            // Générer les couleurs des cases à partir des couleurs du thème
+            if ($playerTheme->primary_color && $playerTheme->secondary_color) {
+                $themeStyles['squareDark1'] = $playerTheme->primary_color;
+                $themeStyles['squareDark2'] = $this->darkenColor($playerTheme->primary_color, 15);
+                $themeStyles['squareLight1'] = $this->lightenColor($playerTheme->secondary_color, 70);
+                $themeStyles['squareLight2'] = $this->lightenColor($playerTheme->secondary_color, 60);
+            }
+        }
+
+        return view('game.play', compact('game', 'playerColor', 'cards', 'themeSounds', 'themeStyles'));
     }
 
     /**
@@ -107,7 +163,23 @@ class GameController extends Controller
 
         $game->update($updateData);
 
-        // TODO: Broadcaster le coup via WebSocket
+        // Broadcaster le coup via WebSocket
+        broadcast(new GameMoveMade(
+            gameUuid: $game->uuid,
+            from: $validated['from'],
+            to: $validated['to'],
+            san: $validated['san'],
+            fen: $validated['fen'],
+            piece: $validated['piece'],
+            captured: $validated['captured'] ?? null,
+            promotion: $validated['promotion'] ?? null,
+            isCheck: $request->boolean('is_check'),
+            isCheckmate: $request->boolean('is_checkmate'),
+            isCastling: $request->boolean('is_castling'),
+            isEnPassant: $request->boolean('is_en_passant'),
+            winner: $request->boolean('is_checkmate') ? ($game->current_turn === 'white' ? 'black' : 'white') : null,
+            endReason: $request->boolean('is_checkmate') ? 'checkmate' : null,
+        ))->toOthers();
 
         return response()->json([
             'success' => true,
@@ -144,6 +216,14 @@ class GameController extends Controller
             'end_reason' => 'resignation',
             'ended_at' => now(),
         ]);
+
+        // Broadcaster la fin de partie
+        broadcast(new GameEnded(
+            gameUuid: $game->uuid,
+            reason: 'resignation',
+            winnerId: $winnerId,
+            winnerColor: $playerColor === 'white' ? 'black' : 'white',
+        ));
 
         return redirect()->route('lobby')->with('info', 'Vous avez abandonné la partie.');
     }
@@ -197,6 +277,48 @@ class GameController extends Controller
     }
 
     /**
+     * Éclaircit une couleur hexadécimale
+     */
+    private function lightenColor(string $hex, int $percent): string
+    {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) == 3) {
+            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+        }
+
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+
+        $r = min(255, $r + (255 - $r) * $percent / 100);
+        $g = min(255, $g + (255 - $g) * $percent / 100);
+        $b = min(255, $b + (255 - $b) * $percent / 100);
+
+        return sprintf('#%02x%02x%02x', (int)$r, (int)$g, (int)$b);
+    }
+
+    /**
+     * Assombrit une couleur hexadécimale
+     */
+    private function darkenColor(string $hex, int $percent): string
+    {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) == 3) {
+            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+        }
+
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+
+        $r = max(0, $r * (100 - $percent) / 100);
+        $g = max(0, $g * (100 - $percent) / 100);
+        $b = max(0, $b * (100 - $percent) / 100);
+
+        return sprintf('#%02x%02x%02x', (int)$r, (int)$g, (int)$b);
+    }
+
+    /**
      * Replay d'une partie
      */
     public function replay(string $uuid)
@@ -204,7 +326,9 @@ class GameController extends Controller
         $game = Game::with([
             'whitePlayer',
             'blackPlayer',
-            'theme.cards',
+            'whiteTheme.cards',
+            'blackTheme.cards',
+            'theme.cards', // Legacy fallback
             'moves'
         ])->where('uuid', $uuid)->firstOrFail();
 
@@ -212,10 +336,22 @@ class GameController extends Controller
             return redirect()->route('game.play', $game->uuid);
         }
 
+        // Organiser les cartes par type et couleur (thèmes séparés)
         $cards = [];
-        if ($game->theme) {
-            foreach ($game->theme->cards as $card) {
-                $cards[$card->color][$card->piece_type] = $card;
+
+        // Cartes blanches depuis whiteTheme
+        $whiteTheme = $game->whiteTheme ?? $game->theme;
+        if ($whiteTheme) {
+            foreach ($whiteTheme->cards->where('color', 'white') as $card) {
+                $cards['white'][$card->piece_type] = $card;
+            }
+        }
+
+        // Cartes noires depuis blackTheme
+        $blackTheme = $game->blackTheme ?? $game->theme;
+        if ($blackTheme) {
+            foreach ($blackTheme->cards->where('color', 'black') as $card) {
+                $cards['black'][$card->piece_type] = $card;
             }
         }
 
