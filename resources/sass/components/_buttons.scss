@@ -1,0 +1,49 @@
+// ============================================================
+// Composant : Boutons
+// BEM Block : .btn
+// Modifiers  : .btn--primary (.btn-primary), .btn--secondary,
+//              .btn--danger, .btn--accent
+// ============================================================
+
+// --- Couche Tailwind pour les variantes utilitaires ---
+@layer components {
+
+    // Base
+    .btn {
+        @apply px-4 py-2 rounded-lg font-medium;
+        transition: $transition-base;
+    }
+
+    // Variante secondaire (verre)
+    .btn-secondary {
+        @apply bg-white/10 text-white border border-white/20 hover:bg-white/20;
+    }
+
+    // Variante danger
+    .btn-danger {
+        @apply bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30;
+    }
+}
+
+// --- Variante primaire (dégradé indigo → violet) ---
+.btn-primary {
+    background: linear-gradient(135deg, $primary 0%, $secondary 100%);
+    color: white;
+    transition: $transition-md;
+
+    &:hover {
+        transform:  translateY(-2px);
+        box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+    }
+}
+
+// --- Variante accent (dégradé ambre → orange) ---
+.btn-accent {
+    background: linear-gradient(135deg, $accent 0%, #f97316 100%);
+    transition: $transition-md;
+
+    &:hover {
+        transform:  translateY(-2px);
+        box-shadow: 0 10px 30px rgba(245, 158, 11, 0.4);
+    }
+}

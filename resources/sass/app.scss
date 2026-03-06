@@ -1,0 +1,38 @@
+// ============================================================
+// FanChess — Point d'entrée SASS principal
+//
+// Note : @import est utilisé intentionnellement ici (plutôt que
+// @use) pour permettre d'intercaler les directives @tailwind
+// entre les imports, garantissant ainsi le bon ordre en cascade.
+//
+// Structure :
+//  1. Variables SASS & CSS custom properties
+//  2. Tailwind base + components + utilities
+//  3. Surcharges de base (body, scrollbar, focus…)
+//  4. Animations & keyframes
+//  5. Composants
+// ============================================================
+
+// 1. Variables (SASS vars + CSS custom properties via :root)
+@import 'variables';
+
+// 2. Tailwind
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+// 3. Base
+@import 'base';
+
+// 4. Animations
+@import 'animations';
+
+// 5. Composants
+@import 'components/buttons';
+@import 'components/cards';
+@import 'components/navigation';
+@import 'components/forms';
+@import 'components/pagination';
+@import 'components/effects';
+@import 'components/chess';
+@import 'components/sidebar';

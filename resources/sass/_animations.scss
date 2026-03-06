@@ -1,0 +1,46 @@
+// ============================================================
+// Animations & keyframes
+// ============================================================
+
+// --- Fade In (entrée douce vers le haut) ---
+@keyframes fadeIn {
+    from {
+        opacity:   0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity:   1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+// --- Fond cosmique (étoiles en défilement) ---
+@keyframes cosmic {
+    from { background-position: 0 0; }
+    to   { background-position: 350px 200px; }
+}
+
+// BEM Block : .cosmic-bg
+.cosmic-bg {
+    position:       fixed;
+    top:            0;
+    left:           0;
+    width:          100%;
+    height:         100%;
+    pointer-events: none;
+    z-index:        0;
+    opacity:        0.5;
+    background-image:
+        radial-gradient(2px 2px at 20px 30px,   #ffffff, transparent),
+        radial-gradient(2px 2px at 40px 70px,   rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1px 1px at 90px 40px,   #ffffff, transparent),
+        radial-gradient(2px 2px at 160px 120px, rgba(255, 255, 255, 0.9), transparent),
+        radial-gradient(1px 1px at 230px 80px,  #ffffff, transparent),
+        radial-gradient(2px 2px at 300px 150px, rgba(255, 255, 255, 0.7), transparent);
+    background-size: 350px 200px;
+    animation: cosmic 60s linear infinite;
+}

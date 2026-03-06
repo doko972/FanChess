@@ -1,0 +1,35 @@
+// ============================================================
+// Composant : Pagination
+// BEM Block : .pagination
+// Elements  : .pagination__item (> *)
+//             .pagination__link (a)
+// Modifiers : .pagination__item--current (span.current)
+//             .pagination__item--disabled (span.disabled)
+// ============================================================
+
+@layer components {
+
+    .pagination {
+        @apply flex items-center justify-center space-x-1;
+
+        // Chaque élément de pagination
+        > * {
+            @apply px-3 py-2 rounded-lg text-sm;
+        }
+
+        // Lien navigable
+        a {
+            @apply bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition;
+        }
+
+        // Page courante
+        span.current {
+            @apply bg-indigo-500 text-white;
+        }
+
+        // Page désactivée (précédent / suivant inaccessible)
+        span.disabled {
+            @apply text-gray-600 cursor-not-allowed;
+        }
+    }
+}

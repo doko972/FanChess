@@ -1,0 +1,57 @@
+// ============================================================
+// Composant : Cartes / Panneaux
+// BEM Block : .card
+// Elements  : —
+// Modifiers : .card--glass (.card-glass), .card--detail (.card-detail)
+//             .card-detail--enemy (.card-detail.enemy)
+// ============================================================
+
+@layer components {
+
+    // Carte solide (fond sombre)
+    .card {
+        @apply bg-gray-800 border border-gray-700 rounded-xl;
+    }
+
+    // Carte en verre (glassmorphism)
+    .card-glass {
+        @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-xl;
+    }
+}
+
+// --- Carte de détail de pièce (panneau latéral jeu) ---
+// BEM : .card-detail (block)
+.card-detail {
+    background: linear-gradient(
+        135deg,
+        rgba(99, 102, 241, 0.2) 0%,
+        rgba(139, 92, 246, 0.2) 100%
+    );
+    border: 2px solid rgba(99, 102, 241, 0.3);
+
+    // Modifier : pièce ennemie
+    &.enemy {
+        background: linear-gradient(
+            135deg,
+            rgba(239, 68, 68, 0.2)  0%,
+            rgba(185, 28, 28, 0.2) 100%
+        );
+        border-color: rgba(239, 68, 68, 0.3);
+    }
+}
+
+// --- Barres de statistiques (dans .card-detail) ---
+// BEM : .card-detail__stat-bar → .stat-bar
+.stat-bar {
+    height:        6px;
+    background:    rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow:      hidden;
+}
+
+// BEM : .card-detail__stat-fill → .stat-fill
+.stat-fill {
+    height:        100%;
+    border-radius: 3px;
+    transition:    width 0.5s ease;
+}

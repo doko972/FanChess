@@ -1,0 +1,103 @@
+// ============================================================
+// Composant : Navigation principale
+// BEM Block : .nav-link          (liens desktop)
+// BEM Block : .burger            (bouton hamburger mobile)
+//   Modifier : .burger--open (.is-open)
+// BEM Block : .mobile-nav-link   (liens dans le menu mobile)
+//   Modifier : .mobile-nav-link--active (.active)
+// ============================================================
+
+// ----------------------------------------------------------
+// BEM Block : .nav-link (liens de navigation desktop)
+// ----------------------------------------------------------
+.nav-link {
+    position:   relative;
+    transition: color 0.3s ease;
+
+    // Soulignement décoratif animé
+    &::after {
+        content:    '';
+        position:   absolute;
+        bottom:     -4px;
+        left:       0;
+        width:      0;
+        height:     2px;
+        background: linear-gradient(90deg, var(--primary), var(--accent));
+        transition: width 0.3s ease;
+    }
+
+    &:hover::after,
+    &.active::after {
+        width: 100%;
+    }
+}
+
+// ----------------------------------------------------------
+// BEM Block : .burger (icône hamburger → croix animée)
+// ----------------------------------------------------------
+.burger {
+    width:    24px;
+    height:   18px;
+    position: relative;
+    cursor:   pointer;
+    flex-shrink: 0;
+
+    // Les 3 barres
+    span {
+        display:       block;
+        position:      absolute;
+        height:        2px;
+        width:         100%;
+        background:    white;
+        border-radius: 2px;
+        left:          0;
+        transition:    all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+        &:nth-child(1) { top: 0; }
+        &:nth-child(2) { top: 8px; }
+        &:nth-child(3) { top: 16px; }
+    }
+
+    // BEM Modifier : menu ouvert → croix
+    &.is-open {
+        span:nth-child(1) {
+            top:       8px;
+            transform: rotate(45deg);
+        }
+
+        span:nth-child(2) {
+            opacity:   0;
+            transform: scaleX(0);
+        }
+
+        span:nth-child(3) {
+            top:       8px;
+            transform: rotate(-45deg);
+        }
+    }
+}
+
+// ----------------------------------------------------------
+// BEM Block : .mobile-nav-link (liens dans le tiroir mobile)
+// ----------------------------------------------------------
+.mobile-nav-link {
+    display:       flex;
+    align-items:   center;
+    width:         100%;
+    padding:       0.75rem 1rem;
+    border-radius: $radius-sm;
+    color:         #d1d5db;
+    font-size:     0.95rem;
+    transition:    $transition-base;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.06);
+        color:      white;
+    }
+
+    // BEM Modifier : lien actif
+    &.active {
+        background: rgba(99, 102, 241, 0.15);
+        color:      white;
+    }
+}

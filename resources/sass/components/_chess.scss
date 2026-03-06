@@ -1,0 +1,218 @@
+// ============================================================
+// Composant : Échiquier & Pièces
+//
+// BEM Block : .chess-board-container
+//   Modifier : .chess-board-container--fullscreen (.fullscreen-board)
+//
+// BEM Block : .chess-board (grille)
+//
+// BEM Block : .chess-square
+//   Modifier : .chess-square--light   (.light)
+//   Modifier : .chess-square--dark    (.dark)
+//   Modifier : .chess-square--selected    (.selected)
+//   Modifier : .chess-square--legal-move  (.legal-move)
+//   Modifier : .chess-square--legal-capture (.legal-capture)
+//   Modifier : .chess-square--last-move   (.last-move)
+//   Modifier : .chess-square--check       (.check)
+//
+// BEM Block : .chess-piece
+//   Element  : .chess-piece__icon  (.piece-icon)
+//   Element  : .chess-piece__image (.card-image)
+//   Element  : .chess-piece__name  (.piece-name)
+//   Modifier : .chess-piece--black   (.black-piece)
+//   Modifier : .chess-piece--dragging (.dragging)
+//
+// BEM Block : .move-history
+//   Element  : .move-history__item   (.move-item)
+//   Element  : .move-history__number (.move-number)
+//   Element  : .move-history__white  (.move-white)
+//   Element  : .move-history__black  (.move-black)
+// ============================================================
+
+
+// ----------------------------------------------------------
+// BEM Block : .chess-board-container (conteneur de l'échiquier)
+// ----------------------------------------------------------
+.chess-board-container {
+    display:         flex;
+    justify-content: center;
+    align-items:     center;
+    transition:      $transition-md;
+
+    // BEM Modifier : plein écran
+    &.fullscreen-board {
+        position:   fixed;
+        top:        0;
+        left:       0;
+        right:      0;
+        bottom:     0;
+        background: rgba(10, 10, 26, 0.98);
+        z-index:    1000;
+        padding:    20px;
+    }
+}
+
+// ----------------------------------------------------------
+// BEM Block : .chess-board (grille 8x8)
+// ----------------------------------------------------------
+.chess-board {
+    display:               grid;
+    grid-template-columns: repeat(8, 1fr);
+    border-radius:         $radius-md;
+    box-shadow:            0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    transition:            width 0.3s ease, height 0.3s ease;
+}
+
+// ----------------------------------------------------------
+// BEM Block : .chess-square (case de l'échiquier)
+// ----------------------------------------------------------
+.chess-square {
+    position:        relative;
+    aspect-ratio:    1;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    cursor:          pointer;
+    transition:      $transition-base;
+    height:          100%;
+    width:           100%;
+
+    // BEM Modifier : case claire
+    &.light {
+        background: linear-gradient(135deg, #e8d5b7 0%, #d4c4a8 100%);
+    }
+
+    // BEM Modifier : case sombre
+    &.dark {
+        background: linear-gradient(135deg, #8b7355 0%, #6d5a45 100%);
+    }
+
+    &:hover {
+        filter: brightness(1.1);
+    }
+
+    // BEM Modifier : case sélectionnée
+    &.selected {
+        box-shadow: inset 0 0 0 4px $accent !important;
+    }
+
+    // BEM Modifier : coup légal (case vide disponible)
+    &.legal-move {
+        &::after {
+            content:       '';
+            position:      absolute;
+            width:         30%;
+            height:        30%;
+            background:    rgba(99, 102, 241, 0.6);
+            border-radius: 50%;
+            z-index:       5;
+        }
+    }
+
+    // BEM Modifier : capture légale (pièce adverse prenable)
+    &.legal-capture {
+        box-shadow: inset 0 0 0 4px rgba(239, 68, 68, 0.8) !important;
+    }
+
+    // BEM Modifier : dernier coup joué
+    &.last-move {
+        background: rgba(245, 158, 11, 0.4) !important;
+    }
+
+    // BEM Modifier : roi en échec
+    &.check {
+        background: rgba(239, 68, 68, 0.6) !important;
+    }
+}
+
+// ----------------------------------------------------------
+// BEM Block : .chess-piece (pièce / carte miniature)
+// ----------------------------------------------------------
+.chess-piece {
+    width:           88%;
+    height:          88%;
+    border-radius:   $radius-sm;
+    background:      linear-gradient(145deg, #ffffff 0%, #e8e8e8 100%);
+    box-shadow:      0 3px 10px rgba(0, 0, 0, 0.3);
+    display:         flex;
+    flex-direction:  column;
+    align-items:     center;
+    justify-content: center;
+    cursor:          grab;
+    transition:      transform 0.15s;
+    user-select:     none;
+    z-index:         10;
+    color:           #1a1a1a;
+
+    // BEM Modifier : pièce noire
+    &.black-piece {
+        background: linear-gradient(145deg, #4a4a4a 0%, #2a2a2a 100%);
+        color:      #f0f0f0;
+    }
+
+    &:hover {
+        transform: scale(1.08);
+        z-index:   20;
+    }
+
+    // BEM Modifier : en cours de drag
+    &.dragging {
+        opacity: 0.5;
+        cursor:  grabbing;
+    }
+}
+
+// BEM Element : icône unicode de la pièce
+.piece-icon {
+    font-size:   1.6rem;
+    line-height: 1;
+}
+
+// BEM Element : image de la carte personnage
+.card-image {
+    width:         80%;
+    height:        65%;
+    object-fit:    cover;
+    border-radius: 4px;
+}
+
+// BEM Element : nom de la pièce / personnage
+.piece-name {
+    font-size:      0.4rem;
+    font-weight:    600;
+    text-align:     center;
+    line-height:    1.1;
+    max-width:      95%;
+    overflow:       hidden;
+    text-overflow:  ellipsis;
+    white-space:    nowrap;
+    margin-top:     1px;
+    opacity:        0.9;
+}
+
+// ----------------------------------------------------------
+// BEM Block : .move-history (historique des coups)
+// ----------------------------------------------------------
+.move-item {
+    display:     flex;
+    padding:     0.25rem 0.5rem;
+    font-family: monospace;
+    font-size:   0.85rem;
+
+    // Ligne alternée
+    &:nth-child(odd) {
+        background: rgba(255, 255, 255, 0.03);
+    }
+}
+
+// BEM Element : numéro du coup
+.move-number {
+    width: 2rem;
+    color: #9ca3af;
+}
+
+// BEM Elements : coups blancs et noirs
+.move-white,
+.move-black {
+    width: 4rem;
+}

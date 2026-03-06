@@ -1,0 +1,48 @@
+// ============================================================
+// Variables globales FanChess
+// ============================================================
+
+// --- Variables CSS (disponibles dans tout le DOM) ---
+:root {
+    --primary:      #6366f1;
+    --primary-dark: #4f46e5;
+    --secondary:    #8b5cf6;
+    --accent:       #f59e0b;
+    --dark:         #0f0f23;
+    --darker:       #0a0a1a;
+}
+
+// --- Variables SASS ---
+
+// Couleurs
+$primary:      #6366f1;
+$primary-dark: #4f46e5;
+$secondary:    #8b5cf6;
+$accent:       #f59e0b;
+$dark:         #0f0f23;
+$darker:       #0a0a1a;
+
+// Couleurs sémantiques
+$color-success: #22c55e;
+$color-danger:  #ef4444;
+$color-warning: #f59e0b;
+$color-info:    #3b82f6;
+
+// Typographie
+$font-base:   'Inter', sans-serif;
+$font-gaming: 'Orbitron', sans-serif;
+
+// Bordures
+$radius-sm: 0.5rem;   // 8px
+$radius-md: 0.75rem;  // 12px
+$radius-lg: 1rem;     // 16px
+$radius-xl: 1.5rem;   // 24px
+
+// Transitions
+$transition-fast: all 0.15s ease;
+$transition-base: all 0.2s ease;
+$transition-md:   all 0.3s ease;
+
+// Opacités verre (glassmorphism)
+$glass-bg:     rgba(255, 255, 255, 0.05);
+$glass-border: rgba(255, 255, 255, 0.10);
